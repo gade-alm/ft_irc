@@ -15,7 +15,7 @@
 # define MAXPORT 65535
 # define BACKLOG 10
 # define IP "127.0.0.1"
-
+# define BOSS "SOU MAQUINA"
 class Server {
 	private:
 		Server( const Server& );

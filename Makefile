@@ -1,4 +1,5 @@
-FILENAME = main.cpp
+FILENAME = Server/Server.cpp \
+					 main.cpp
 
 SRCS_DIR = srcs
 
