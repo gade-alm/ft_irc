@@ -1,0 +1,53 @@
+Good links to study ->
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+https://www.gta.ufrj.br/ensino/eel878/sockets/index.html
+                                                                        both for almost the same thing, the second one has a little bit more stuff
+https://beej.us/guide/bgnet/pdf/bgnet_a4_c_1.pdf
+------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------
+IRC Explanation-> http://chi.cs.uchicago.edu/chirc/irc.html
+------------------------------------------------------------------------------------------------------------------------------------------------------
+[RFC2810] Internet Relay Chat: Architecture. This document describes the overall architecture of IRC. -> https://datatracker.ietf.org/doc/html/rfc2810
+
+[RFC2811] Internet Relay Chat: Channel Management. This document describes how channels are managed in IRC. -> https://datatracker.ietf.org/doc/html/rfc2811
+
+[RFC2812] Internet Relay Chat: Client Protocol. This document describes the protocol used between IRC clients and servers (sometimes referred to as the “client-server” protocol) -> https://datatracker.ietf.org/doc/html/rfc2812
+
+[RFC2813] Internet Relay Chat: Server Protocol. This document describes the “server-server” protocol used between IRC servers in the same network. -> https://datatracker.ietf.org/doc/html/rfc2813
+------------------------------------------------------------------------------------------------------------------------------------------------------
+Sockets Server/Client -> https://www.bogotobogo.com/cplusplus/sockets_server_client.php
+------------------------------------------------------------------------------------------------------------------------------------------------------
+Order on server:
+
+1 -> socket()
+2 -> bind()
+3 -> listen()
+4 -> accept()
+5-6 -> recv()/send() and repeat
+
+Order on client:
+1 -> socket()
+2 -> connect()
+3 -> recv()/send() and repeat
+
+order stated as on image below
+
+https://www.bogotobogo.com/cplusplus/images/socket/TCP_IP_socket_diagram.png
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+A port is a 16-bit number in the range 0-65535  // Ports 0-1023 are reserved by the system and used by common network protocols.
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Client: 
+
+IRC can have any number of clients that doesn't exceed the FDs available.
+
+To be able to exchange messages, two clients must be able to locate
+   each other.
+
+   Upon connecting to a server, a client registers using a label which
+   is then used by other servers and clients to know where the client is
+   located.  Servers are responsible for keeping track of all the labels
+   being used.
+------------------------------------------------------------------------------------------------------------------------------------------------------
