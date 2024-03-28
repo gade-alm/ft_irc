@@ -19,13 +19,15 @@
 class Server {
 	private:
 		Server( const Server& );
+		Server();
 		int	_serverSocket;
 		int	_bindSocket;
 		int	_listenSocket;
 		char**	channel;
+		int	_serverPort;
 	public:
+		Server( const char* portValue, const std::string &passwordValue );
 		sockaddr_in serverAddr;
-		Server();
 		~Server();
 		void	setPort ( int portNumber );
 		void	setSocket ( int socketFd );

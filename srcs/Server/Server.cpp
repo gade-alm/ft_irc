@@ -9,6 +9,26 @@ Server::Server( const Server& ){
 Server::~Server( void ) {
 }
 
+Server::Server( const char* portValue, const std::string &passwordValue ){
+	(void)passwordValue;
+	int port = atoi(portValue);
+	if (port < MINPORT || port > MAXPORT || port > INT_MAX || port < INT_MIN) {
+		perror("Error while opening sockets");
+		return ;
+	}
+	_serverPort = port;
+	setSocket(socket(AF_INET,SOCK_STREAM,0));
+	if (getSocket() == -1 ){
+		perror("Error while binding");
+		return ;
+	}
+	listenSockets();
+	if (getListen() == -1) {
+		perror("Error while opening sockets");
+		return ;
+	}
+}
+
 void	Server::setPort( int portNumber ) {
 	serverAddr.sin_port = portNumber;
 }

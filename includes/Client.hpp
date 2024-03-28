@@ -6,14 +6,14 @@
 
 class Client{
 	private:
-		Client();
-		~Client();
 		Client( const Client& );
 		Client& operator=(const Client & );
 		std::string	_nickname;
 		std::string	_username;
 		bool		_operator;
 	public:
+		Client();
+		~Client();
 		void setNickname( std::string nick );
 		void setUsername( std::string user );
 		std::string getNickname( void );
