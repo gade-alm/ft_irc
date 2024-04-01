@@ -1,7 +1,7 @@
 #ifndef CLIENT_HPP
 # define CLIENT_HPP
 
-# include "Server.hpp"
+# include <iostream>
 
 class Client{
 	private:
@@ -13,7 +13,10 @@ class Client{
 		std::string	_username;
 		bool		_operator;
 	public:
-		sockaddr_in	clientAddr;
+		const std::string Client::getNick() const;
+		const std::string Client::getUser() const;
+		const bool Client::isOP() const;
+		void setOp(bool op);
 };
 
 #endif
