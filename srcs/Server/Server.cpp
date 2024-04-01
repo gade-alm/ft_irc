@@ -7,34 +7,40 @@ Server::Server( const Server& ){
 }
 
 Server::~Server( void ) {
+	freeaddrinfo(serverInfo);
 }
 
 Server::Server( const char* portValue, const std::string &passwordValue ){
-	(void)passwordValue;
+
 	int port = atoi(portValue);
 	if (port < MINPORT || port > MAXPORT || port > INT_MAX || port < INT_MIN) {
 		perror("Error while opening sockets");
 		return ;
 	}
-	_serverPort = port;
-	setSocket(socket(AF_INET,SOCK_STREAM,0));
+	_serverPort = portValue;
+	setPassword(passwordValue);
+
+	initAddr();
+	int getAddrstatus = (getaddrinfo(NULL, _serverPort, &serverAddr, &serverInfo));
+	if (getAddrstatus != 0) {
+		perror ("Error on ADDR Status");
+		return ;
+	}
+	setSocket(socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol));
 	if (getSocket() == -1 ){
 		perror("Error while binding");
 		return ;
 	}
+	setBind();
+	if (_bindSocket == -1) {
+		perror("Error while binding socket");
+		return ;
+	}
 	listenSockets();
-	if (getListen() == -1) {
+	if (_listenSocket == -1) {
 		perror("Error while opening sockets");
 		return ;
 	}
-}
-
-void	Server::setPort( int portNumber ) {
-	serverAddr.sin_port = portNumber;
-}
-
-int		Server::getPort( void ) {
-	return serverAddr.sin_port;
 }
 
 void	Server::setSocket( int socketFD ) {
@@ -46,25 +52,25 @@ int		Server::getSocket( void ) {
 }
 
 void	Server::setBind( void ) {
-	_bindSocket =  bind(getSocket(), (struct sockaddr *)&serverAddr, sizeof(struct sockaddr));
+	_bindSocket =  bind(getSocket(), serverAddr.ai_addr, serverAddr.ai_addrlen);
 }
 
-int	Server::getBind( void ) {
-	return _bindSocket;
-}
-
-void	Server::bindSockets( void ) {
-	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_port = htons(getPort());
-	serverAddr.sin_addr.s_addr = inet_addr(IP);
-	memset(&(serverAddr.sin_zero), '\0', 8);
-	setBind();
+void	Server::initAddr( void ) {
+	memset(&serverAddr, 0, sizeof(serverAddr));
+	serverAddr.ai_family = AF_INET;
+	serverAddr.ai_socktype = SOCK_STREAM;
+	serverAddr.ai_flags = AI_PASSIVE;
 }
 
 void	Server::listenSockets( void ) {
 	_listenSocket = listen(getSocket(), BACKLOG);
 }
 
-int		Server::getListen( void ) {
-	return _listenSocket;
+void	Server::setPassword( std::string pass ){
+	_password = pass;
+}
+
+int		Server::acceptFD( void ) {
+
+	_accetFD = accept(_serverSocket, )
 }
