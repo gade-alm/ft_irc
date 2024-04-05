@@ -12,6 +12,11 @@
 # include <arpa/inet.h>
 # include <climits>
 # include <sys/epoll.h>
+# include <unistd.h>
+# include <fcntl.h>
+# include <sys/time.h>
+# include <poll.h>
+
 
 # define MINPORT 1024
 # define MAXPORT 65535
@@ -19,6 +24,7 @@
 # define IP "127.0.0.1"
 # define BOSS "SOU MAQUINA"
 # define PROTOCOL 0
+# define MAXUSERS 24
 
 class Server {
 	private:
@@ -34,15 +40,17 @@ class Server {
 		std::string _password;
 
 	public:
-		struct sockaddr_in serverAddr;
+		struct pollfd pollfds[MAXUSERS];
+		sockaddr_in serverAddr;
 		Server( const char* portValue, const std::string &passwordValue );
 
 		void	setSocket ( int socketFd );
 		void	setBind( void );
 		void	initAddr ( void );
 		void	listenSockets( void );
-		void	setPassword( std::string pass );
 		int		acceptFD( void );
+		int		getSocket( void );
+		void	setFDPoll( int i );
 
 		~Server();
 };

@@ -18,19 +18,20 @@ Server::Server( const char* portValue, const std::string &passwordValue ){
 		return ;
 	}
 	_serverPort = port;
-	setPassword(passwordValue);
-
+	_password = passwordValue;
 	initAddr();
 	setSocket(socket(serverAddr.sin_family, SOCK_STREAM, PROTOCOL));
+	fcntl(_serverSocket, F_SETFL, O_NONBLOCK);
 
 	setBind();
+
 	if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, &used, sizeof(used)) == -1){
 		perror ("setsockopt");
 		return ;
 	}
 
 	listenSockets();
-	// acceptFD();
+
 }
 
 void	Server::setSocket( int socketFD ) {
@@ -42,7 +43,9 @@ void	Server::setSocket( int socketFD ) {
 }
 
 void	Server::setBind( void ) {
-	_bindSocket =  bind(_serverSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
+	std::cout << _serverSocket << std::endl;
+	_bindSocket =  bind(_serverSocket, (struct sockaddr *)&serverAddr, sizeof(struct sockaddr));
+	std::cout << _bindSocket << std::endl;
 	if (_bindSocket == -1) {
 		perror("setBind");
 		return ;
@@ -53,8 +56,8 @@ void	Server::initAddr( void ) {
 	memset(&(serverAddr.sin_zero), 0, sizeof(serverAddr.sin_zero));
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_port = htons(_serverPort);
-	serverAddr.sin_addr.s_addr = inet_aton("127.0.0.1", &(serverAddr.sin_addr));
-	if (serverAddr.sin_addr.s_addr == 0) {
+	serverAddr.sin_addr.s_addr = INADDR_ANY;
+	if (serverAddr.sin_addr.s_addr != 0) {
 		perror("initAddr");
 		return ;
 	}
@@ -68,10 +71,14 @@ void	Server::listenSockets( void ) {
 	}
 }
 
-void	Server::setPassword( std::string pass ) {
-	_password = pass;
+int		Server::getSocket( void ) {
+	return _serverSocket;
 }
-
+ 
+void	Server::setFDPoll( int i ) {
+	pollfds[i].fd = getSocket();
+	pollfds[i].events = POLLIN;
+}
 // int		Server::acceptFD( void ) {
 // 	int newSocket;
 
