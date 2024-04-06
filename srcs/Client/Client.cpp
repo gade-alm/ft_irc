@@ -10,6 +10,7 @@ Client::Client( const Client& ){
 }
 
 Client& Client::operator=( const Client & ){
+    return *this;
 }
 
 const std::string Client::getNick() const {
@@ -19,7 +20,7 @@ const std::string Client::getUser() const {
     return _username;
 }
 
-const bool Client::isOP() const {
+bool Client::isOP() const {
     return _operator;
 }
 

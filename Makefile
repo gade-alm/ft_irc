@@ -1,4 +1,5 @@
-FILENAME = Server/Server.cpp \
+FILENAME = Client/Client.cpp \
+			Server/Server.cpp \
 					 main.cpp
 
 SRCS_DIR = srcs
