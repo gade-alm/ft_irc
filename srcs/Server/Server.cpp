@@ -74,11 +74,7 @@ void	Server::listenSockets( void ) {
 int		Server::getSocket( void ) {
 	return _serverSocket;
 }
- 
-void	Server::setFDPoll( int i ) {
-	pollfds[i].fd = getSocket();
-	pollfds[i].events = POLLIN;
-}
+
 // int		Server::acceptFD( void ) {
 // 	int newSocket;
 
