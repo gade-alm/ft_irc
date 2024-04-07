@@ -7,6 +7,8 @@ int main ( int ac, char **av ) {
 		return 1;
 	}
 	int maxfds;
+	int nbytes;
+	char buf[512];
 
 	fd_set selectfds;
 	fd_set masterselect;
@@ -23,9 +25,9 @@ int main ( int ac, char **av ) {
 
 	while (1) {
 		selectfds = masterselect;
-		if (select(maxfds + 1, &selectfds, NULL, NULL, NULL) != -1) {
+		if (select(maxfds + 1, &selectfds, NULL, NULL, NULL) == -1) {
 			perror ("select error");
-			return 1;
+			break ;
 		}
 		for ( int i = 0; i <= maxfds; i++ ) {
 			if (FD_ISSET(i, &selectfds)) {
@@ -36,14 +38,28 @@ int main ( int ac, char **av ) {
 						if (clientfd > maxfds)
 							maxfds = clientfd;
 			} else {
-				FD_SET(clientfd, &masterselect);
-				if (clientfd > maxfds)
-					maxfds = clientfd;
+				perror ("accept error ");
+			}
+		}
+		else {
+			if ((nbytes = recv(i, buf,sizeof(buf), 0)) < 1) {
+					perror("receive");
+				close(i);
+				FD_CLR(i, &masterselect);
+		}
+		else {
+			for (int j = 0; j < maxfds; j++) {
+				if (FD_ISSET(j, &masterselect)) {
+					if (j != server.getSocket() && j != i) {
+						if (send(j, buf, nbytes, 0) == -1)
+							perror("send");
+					}
+				}
 			}
 		}
 		}	
+		// std::cout << "comandos: " << buf << std::endl;
 	}
-	// epoll_create(2);
-	// std::cout << epoll_create(2) << std::endl;
+}
 }
 }
