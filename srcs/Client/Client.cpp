@@ -82,7 +82,7 @@ void Client::checkPass(std::string password, std::string input){
     }
     message = "You are authenticated. Welcome.";
     sendMessage(message, _clientfd);
-    std::string channel = "#lobby"; // replace with your channel name
+    std::string channel = "#lobby";
     message = "JOIN " + channel;
     sendMessage(message, _clientfd);
 }
