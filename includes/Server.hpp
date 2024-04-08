@@ -2,20 +2,19 @@
 # define SERVER_HPP
 
 # include <iostream>
-# include <sys/socket.h>
-# include <sys/types.h>
-# include <netdb.h>
-# include <netinet/in.h>
 # include <cstdio>
 # include <cstdlib>
 # include <cstring>
 # include <arpa/inet.h>
-# include <climits>
 # include <sys/epoll.h>
-# include <unistd.h>
 # include <fcntl.h>
+# include <sys/socket.h>
+# include <unistd.h>
+# include <sys/types.h>
+# include <netinet/in.h>
 # include <sys/time.h>
 # include <poll.h>
+# include <sys/select.h>
 
 
 # define MINPORT 1024
@@ -34,7 +33,7 @@ class Server {
 		int	_serverSocket;
 		int	_listenSocket;
 		int	_bindSocket;
-		int	_acceptFD;
+		// int	_acceptFD;
 
 		int	_serverPort;
 		std::string _password;
@@ -48,9 +47,7 @@ class Server {
 		void	setBind( void );
 		void	initAddr ( void );
 		void	listenSockets( void );
-		int		acceptFD( void );
 		int		getSocket( void );
-		void	setFDPoll( int i );
 
 		~Server();
 };

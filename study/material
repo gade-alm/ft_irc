@@ -2,7 +2,7 @@ Good links to study ->
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 https://www.gta.ufrj.br/ensino/eel878/sockets/index.html
-                                                                        both for almost the same thing, the second one has a little bit more stuff
+                  both for almost the same thing, the second one has a little bit more stuff
 https://beej.us/guide/bgnet/pdf/bgnet_a4_c_1.pdf
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -77,4 +77,19 @@ sockfd -> socket fd that was open by socket()
 addrlen -> the size of the struct, can use sizeof(struct sockaddr)
 ______________________________________________________________________________________________________________________________________________________
 
-
+MACROS/PARAMETERS:
+FD_ZERO()
+         This macro clears (removes all file descriptors from) set.
+         It should be employed as the first step in initializing a
+         file descriptor set.
+FD_SET()
+         This macro adds the file descriptor fd to set.  Adding a
+         file descriptor that is already present in the set is a
+         no-op, and does not produce an error.
+FD_ISSET()
+         select() modifies the contents of the sets according to
+         the rules described below.  After calling select(), the
+         FD_ISSET() macro can be used to test if a file descriptor
+         is still present in a set.  FD_ISSET() returns nonzero if
+         the file descriptor fd is present in set, and zero if it
+         is not.

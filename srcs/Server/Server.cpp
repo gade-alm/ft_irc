@@ -23,12 +23,13 @@ Server::Server( const char* portValue, const std::string &passwordValue ){
 	setSocket(socket(serverAddr.sin_family, SOCK_STREAM, PROTOCOL));
 	fcntl(_serverSocket, F_SETFL, O_NONBLOCK);
 
-	setBind();
 
 	if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, &used, sizeof(used)) == -1){
 		perror ("setsockopt");
 		return ;
 	}
+	
+	setBind();
 
 	listenSockets();
 
@@ -43,12 +44,10 @@ void	Server::setSocket( int socketFD ) {
 }
 
 void	Server::setBind( void ) {
-	//std::cout << _serverSocket << std::endl;
 	_bindSocket =  bind(_serverSocket, (struct sockaddr *)&serverAddr, sizeof(struct sockaddr));
-	//std::cout << _bindSocket << std::endl;
 	if (_bindSocket == -1) {
 		perror("setBind");
-		return ;
+		exit (1);
 	}
 }
 
@@ -74,11 +73,7 @@ void	Server::listenSockets( void ) {
 int		Server::getSocket( void ) {
 	return _serverSocket;
 }
- 
-void	Server::setFDPoll( int i ) {
-	pollfds[i].fd = getSocket();
-	pollfds[i].events = POLLIN;
-}
+
 // int		Server::acceptFD( void ) {
 // 	int newSocket;
 
@@ -87,4 +82,4 @@ void	Server::setFDPoll( int i ) {
 // 		perror("Error while trying to create new socket to accept");
 // 		return 1;
 // 	}
-// 
+// }
