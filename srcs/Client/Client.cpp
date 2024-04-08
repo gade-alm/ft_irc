@@ -49,6 +49,7 @@ void Client::connect(std::string password){
 
     char		buffer[1024];
 	ssize_t		n = recv(_clientfd, buffer, sizeof(buffer) - 1, 0);
+    std::cout << buffer << std::endl;
     if (n == -1)
 		throw(std::runtime_error("Error. Failed in rcv."));
 	else if (n == 0){
@@ -56,31 +57,46 @@ void Client::connect(std::string password){
 		return ;	
     }
 	buffer[n] = 0;
-	//std::cout << "Received:" << buffer;
-    //std::cout << "Password Server: " << password << std::endl;
     std::string input = buffer;
     checkPass(password, input);
-   
-
-   /*  for (char* it = &CMD[0]; it != &CMD[0] + CMD.size(); ++it) {
-    std::cout << *it; */
 }
 
-bool Client::checkPass(std::string password, std::string input){
+void Client::checkPass(std::string password, std::string input){
+    std::string message;
     size_t found = input.find("PASS");
     if (found == std::string::npos){
-        std::cout << "Server needs a password try to login with one." << std::endl;
-        return false;
+        message = "Server needs a password try to login with one.";
+        sendMessage(message, _clientfd);
+        disconnect();
+        return;
     }
     size_t end = input.find('\n', found + 4);
-    if (end == std::string::npos) {
-        end = input.size();
-    }
-    std::string afterPass = input.substr(found + 5, end - (found + 5) - 1); 
+    std::string afterPass = input.substr(found + 5, end - (found + 5) - 1);
+    if (!afterPass.empty() && afterPass[0] == ':')
+        afterPass.erase(0, 1);
     if (afterPass != password){
-        std::cout << afterPass;
-        return false;
+        message = "Wrong password.";
+        sendMessage(message, _clientfd);
+        disconnect();
+        return;
     }
-    std::cout << "You are authenticated. Welcome." << std::endl;
-    return true;
+    message = "You are authenticated. Welcome.";
+    sendMessage(message, _clientfd);
+    std::string channel = "#lobby"; // replace with your channel name
+    message = "JOIN " + channel;
+    sendMessage(message, _clientfd);
+}
+
+void Client::disconnect(){
+    std::string message = "You have been disconnected.";
+    sendMessage(message, _clientfd);
+    if (close(_clientfd) == -1)
+        perror("close");
+}
+
+//message need \n at the end.
+void sendMessage(std::string string, int fd){
+    string += "\r\n";
+    if(send(fd, string.c_str(), string.size(), 0) == -1)
+        perror("send");
 }

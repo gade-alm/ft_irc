@@ -3,6 +3,8 @@
 
 # include <iostream>
 # include <netinet/in.h>
+# include <cstdio>
+# include <unistd.h>
 
 class Client{
 	private:
@@ -11,7 +13,7 @@ class Client{
 		std::string	_username;
 		bool		_operator;
 		int			_clientfd;
-		bool 		checkPass(std::string password, std::string input);
+		void 		checkPass(std::string password, std::string input);
 
 	public:
 		sockaddr_in	_client_address;
@@ -27,7 +29,10 @@ class Client{
 		bool isOP() const;
 		void setOp(bool op);
 		void connect(std::string password);
+		void disconnect();
 
 };
+
+void sendMessage(std::string string, int fd);
 
 #endif
