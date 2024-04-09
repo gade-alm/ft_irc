@@ -1,5 +1,6 @@
 #include "Server.hpp"
 
+static void parserTest ( std::string buffer );
 Server::Server( void ) {
 }
 
@@ -116,6 +117,8 @@ void	Server::selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes ) {
 			}
 			else
 			{
+				std::string buffer(buf, numbytes);
+				parserTest(buffer);
 				for ( int j = 0; j < maxfds; j++ ) 
 				{
 					if (FD_ISSET(j, &_masterfds))
@@ -129,4 +132,12 @@ void	Server::selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes ) {
 
 		}
 	}
+}
+
+static void parserTest ( std::string buffer ) 
+{
+	std::string name = buffer.substr(buffer.find("NICK ") + 1);
+	std::string user = buffer.substr(buffer.find("USER ") + 1);
+	std::cout << name << " " << user << std::endl;
+	return ;
 }

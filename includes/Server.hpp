@@ -5,6 +5,7 @@
 # include <cstdio>
 # include <cstdlib>
 # include <cstring>
+# include <map>
 # include <arpa/inet.h>
 # include <sys/epoll.h>
 # include <fcntl.h>
@@ -40,6 +41,7 @@ class Server {
 
 		fd_set	_selectfds;
 		fd_set	_masterfds;
+		std::map<std::string, std::string> Clients;
 
 	public:
 		int		maxfds;
@@ -55,6 +57,7 @@ class Server {
 		void	prepareFDs( void );
 		void	selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes );
 		int		getSocket( void );
+
 
 		~Server();
 };
