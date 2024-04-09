@@ -33,12 +33,17 @@ class Server {
 		int	_serverSocket;
 		int	_listenSocket;
 		int	_bindSocket;
-		// int	_acceptFD;
 
 		int	_serverPort;
+		int _clientfd;
 		std::string _password;
 
+		fd_set	_selectfds;
+		fd_set	_masterfds;
+
 	public:
+		int		maxfds;
+		char	buf[512];
 		struct pollfd pollfds[MAXUSERS];
 		sockaddr_in serverAddr;
 		Server( const char* portValue, const std::string &passwordValue );
@@ -47,6 +52,8 @@ class Server {
 		void	setBind( void );
 		void	initAddr ( void );
 		void	listenSockets( void );
+		void	prepareFDs( void );
+		void	selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes );
 		int		getSocket( void );
 
 		~Server();
