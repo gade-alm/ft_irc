@@ -1,22 +1,20 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
+# include "Client.hpp"
 # include <iostream>
 # include <cstdio>
 # include <cstdlib>
 # include <cstring>
 # include <map>
 # include <arpa/inet.h>
-# include <sys/epoll.h>
 # include <fcntl.h>
 # include <sys/socket.h>
 # include <unistd.h>
 # include <sys/types.h>
 # include <netinet/in.h>
 # include <sys/time.h>
-# include <poll.h>
 # include <sys/select.h>
-
 
 # define MINPORT 1024
 # define MAXPORT 65535
@@ -46,7 +44,6 @@ class Server {
 	public:
 		int		maxfds;
 		char	buf[512];
-		struct pollfd pollfds[MAXUSERS];
 		sockaddr_in serverAddr;
 		Server( const char* portValue, const std::string &passwordValue );
 

@@ -2,7 +2,9 @@
 # define CLIENT_HPP
 
 # include "Server.hpp"
-
+# include <iostream>
+# include <string>
+# include <netinet/in.h>
 
 class Client{
 	private:
@@ -20,6 +22,7 @@ class Client{
 		std::string getUsername( void );
 
 		sockaddr_in	clientAddr;
+		sockaddr_in& getClientAddr( void );
 };
 
 #endif

@@ -10,6 +10,7 @@ Client::Client( const Client& ){
 }
 
 Client& Client::operator=( const Client & ){
+	return *this;
 }
 
 void	Client::setNickname( std::string nick ) {
@@ -26,4 +27,8 @@ void Client::setUsername( std::string user ){
 
 std::string Client::getUsername( void ) {
 	return _username;
+}
+
+sockaddr_in& Client::getClientAddr( void ) {
+	return clientAddr;
 }
