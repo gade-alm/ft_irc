@@ -5,21 +5,29 @@
 # include <netinet/in.h>
 # include <cstdio>
 # include <unistd.h>
+# include <vector>
 
 class Client{
 	private:
-		Client& operator=(const Client & );
 		std::string	_nickname;
 		std::string	_username;
 		bool		_operator;
 		int			_clientfd;
-		void 		checkPass(std::string password, std::string input);
+		bool		_authenticated;
+		bool		_registred;
+		bool 		checkPass(std::string password, std::string input);
 
 	public:
 		sockaddr_in	_client_address;
 		Client();
-		Client( const Client& );
+		Client(int fd);
+		Client( const Client& copy);
 		~Client();
+		Client& operator=(const Client & copy);
+		void setAuth(bool auth);
+		bool getAuth();
+		void setReg(bool reg);
+		bool getReg();
 		const std::string getNick() const;
 		void setNick(std::string Nick);
 		const std::string getUser() const;
@@ -28,6 +36,9 @@ class Client{
 		void setFD(int FD);
 		bool isOP() const;
 		void setOp(bool op);
+		bool checkName(std::string input);
+		bool checkNick(std::string input, std::vector<Client> &Clients);
+		void authenticateClient(std::string password, std::string input, std::vector<Client> &Clients);
 		void connect(std::string password);
 		void disconnect();
 
