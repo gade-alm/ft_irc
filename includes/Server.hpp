@@ -43,7 +43,7 @@ class Server {
 
 	public:
 		int		maxfds;
-		char	buf[512];
+		char	buf[1024];
 		sockaddr_in serverAddr;
 		Server( const char* portValue, const std::string &passwordValue );
 

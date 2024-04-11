@@ -12,7 +12,7 @@ class Client{
 		Client& operator=(const Client & );
 		std::string	_nickname;
 		std::string	_username;
-		bool		_operator;
+		//bool		_operator;
 	public:
 		Client();
 		~Client();

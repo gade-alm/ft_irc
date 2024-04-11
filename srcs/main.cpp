@@ -11,11 +11,11 @@ int main ( int ac, char **av ) {
 
 
 	Server server(av[1], av[2]);
-	Client client;
+	struct sockaddr_in clientaddr;
 	server.prepareFDs();
 
 	while (1) {
 		for (int i = 0; i <= server.maxfds; i++)
-			server.selectLoop(i, client.getClientAddr(), nbytes);
+			server.selectLoop(i, clientaddr, nbytes);
 	}
 }
