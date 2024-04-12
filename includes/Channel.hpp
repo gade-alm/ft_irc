@@ -1,55 +1,54 @@
 #ifndef CHANNEL_HPP
-# define CHANNEL_HPP
+#define CHANNEL_HPP
 
-# include "Client.hpp"
-# include <algorithm>
-# include <vector>
+#include <algorithm>
+#include <vector>
 
-class Channel{
-	private:
-        std::string _name;
-        std::string _password;
-		std::string _topic;
-		bool _topicneedop;
-		bool _inviteonly;
-		bool _limit;
-		long _userlimit;
-		std::vector<Client> _Users;
-		std::vector<Client> _OPs;
-        
-	public:
-		Channel();
-		Channel(std::string name, std::string password);
-		~Channel();
-		Channel( const Channel& );
-		Channel& operator=(const Channel & );
+#include "Client.hpp"
 
-		void setName(std::string name);
-		const std::string getName() const;
+class Channel {
+ private:
+  std::string _name;
+  std::string _password;
+  std::string _topic;
+  bool _topicneedop;
+  bool _inviteonly;
+  bool _limit;
+  long _userlimit;
+  std::vector<Client> _Users;
+  std::vector<Client> _OPs;
 
-		void setPassword(std::string password);
-		const std::string getPassword() const;
+ public:
+  Channel();
+  Channel(std::string name, std::string password);
+  ~Channel();
+  Channel(const Channel&);
+  Channel& operator=(const Channel&);
 
-		void setTopic(std::string topic);
-		const std::string getTopic() const;
+  void setName(std::string name);
+  const std::string getName() const;
 
-		const std::vector<Client>& getUserOn() const;
-		void addUser(Client client);
-		void rmUser(Client client);
+  void setPassword(std::string password);
+  const std::string getPassword() const;
 
-		const std::vector<Client>& getOPsOn() const;
-		void addOP(Client client);
-		void rmOP(Client client);
+  void setTopic(std::string topic);
+  const std::string getTopic() const;
 
-		void setInvMode(bool mode);
-		const bool getInvMode() const;
+  const std::vector<Client>& getUserOn() const;
+  void addUser(Client client);
+  void rmUser(Client client);
 
-		void setLimit(long limit);
-		const long getLimit() const;
+  const std::vector<Client>& getOPsOn() const;
+  void addOP(Client client);
+  void rmOP(Client client);
 
-		void setLimitMode(bool mode);
-		const bool getLimitMode() const;
+  void setInvMode(bool mode);
+  const bool getInvMode() const;
 
+  void setLimit(long limit);
+  const long getLimit() const;
 
+  void setLimitMode(bool mode);
+  const bool getLimitMode() const;
 };
 #endif
