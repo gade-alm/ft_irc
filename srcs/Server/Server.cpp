@@ -1,5 +1,10 @@
 #include "Server.hpp"
 
+#include <algorithm>
+#include <string>
+
+// #include "commands.hpp"
+
 // static void parserTest ( std::string buffer, int i );
 Server::Server(void) {}
 
@@ -111,6 +116,8 @@ void Server::selectLoop(int i, struct sockaddr_in _clientaddr, int numbytes) {
             disconnectClient(it);
             return;
           }
+          std::cout << buf << std::endl;
+          // is_command(buf);
         } else {
           disconnectClient(it);
           return;
@@ -139,6 +146,21 @@ std::vector<Client>::iterator Server::searchClient(int fd) {
     if (it->getFD() == fd) break;
   }
   return it;
+}
+
+bool Server::AddChannel(std::string& name, Client& client) {
+  std::vector<Channel>::iterator it =
+      std::find(_channels.begin(), _channels.end(), name);
+  Channel ch;
+
+  if (it != _channels.end()) {
+    return false;
+  }
+  ch = Channel(name);
+  _channels.push_back(ch);
+  // Adicionar o user como preveligiado
+
+  return true;
 }
 
 void Server::disconnectClient(std::vector<Client>::iterator it) {

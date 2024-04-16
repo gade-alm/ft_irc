@@ -5,11 +5,15 @@ Channel::Channel() : _name(""), _password("") {}
 Channel::Channel(std::string name, std::string password)
     : _name(name), _password(password) {}
 
+Channel::Channel(std::string name) : _name(name), _password("") {}
+
 Channel::~Channel() {}
 
 Channel::Channel(const Channel&) {}
 
 Channel& Channel::operator=(const Channel&) { return *this; }
+
+bool Channel::operator==(Channel const& value) { return value._name == _name; }
 
 void Channel::setName(std::string name) { _name = name; }
 

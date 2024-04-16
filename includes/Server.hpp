@@ -14,15 +14,16 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <string>
 #include <vector>
 
+#include "Channel.hpp"
 #include "Client.hpp"
 
 #define MINPORT 1024
 #define MAXPORT 65535
 #define BACKLOG 10
 #define IP "127.0.0.1"
-#define BOSS "SOU MAQUINA"
 #define PROTOCOL 0
 #define MAXUSERS 24
 
@@ -42,6 +43,7 @@ class Server {
   fd_set _selectfds;
   fd_set _masterfds;
   std::vector<Client> _Clients;
+  std::vector<Channel> _channels;
 
  public:
   int maxfds;
@@ -57,6 +59,7 @@ class Server {
   void selectLoop(int i, struct sockaddr_in _clientaddr, int numbytes);
   int getSocket(void);
   std::vector<Client>::iterator searchClient(int fd);
+  bool AddChannel(std::string& name, Client& client);
   void disconnectClient(std::vector<Client>::iterator it);
 
   ~Server();

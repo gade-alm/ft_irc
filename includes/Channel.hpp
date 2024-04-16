@@ -21,9 +21,11 @@ class Channel {
  public:
   Channel();
   Channel(std::string name, std::string password);
+  Channel(std::string name);
   ~Channel();
   Channel(const Channel&);
   Channel& operator=(const Channel&);
+  bool operator==(Channel const& value);
 
   void setName(std::string name);
   const std::string getName() const;
