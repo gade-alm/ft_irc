@@ -39,5 +39,5 @@ void join(Server &server, Client &client, std::string &msg) {
   if (server.AddChannel(channel, client))
     // Existe channel mandar mensagem
     return;
-  // Bem sucedido
+  // Bem sucedido criar um novo registo de user como admin
 }

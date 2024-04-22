@@ -2,6 +2,8 @@
 #define CHANNEL_HPP
 
 #include <algorithm>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "Client.hpp"
@@ -15,8 +17,7 @@ class Channel {
   bool _inviteonly;
   bool _limit;
   long _userlimit;
-  std::vector<Client> _Users;
-  std::vector<Client> _OPs;
+  std::vector<std::pair<std::string, bool> > _users;
 
  public:
   Channel();
@@ -36,11 +37,11 @@ class Channel {
   void setTopic(std::string topic);
   const std::string getTopic() const;
 
-  const std::vector<Client>& getUserOn() const;
-  void addUser(Client client);
+  const std::vector<std::pair<std::string, bool> >& getUserOn() const;
+  void addUser(Client client, bool isOp);
   void rmUser(Client client);
 
-  const std::vector<Client>& getOPsOn() const;
+  const std::vector<std::pair<std::string, bool> >& getOPsOn() const;
   void addOP(Client client);
   void rmOP(Client client);
 

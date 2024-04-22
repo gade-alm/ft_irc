@@ -1,5 +1,9 @@
 #include "Channel.hpp"
 
+#include <algorithm>
+#include <string>
+#include <utility>
+
 Channel::Channel() : _name(""), _password("") {}
 
 Channel::Channel(std::string name, std::string password)
@@ -39,9 +43,14 @@ void Channel::setLimitMode(bool mode) { _limit = mode; }
 
 const bool Channel::getInvMode() const { return _limit; }
 
-const std::vector<Client>& Channel::getUserOn() const { return _Users; }
+const std::vector<std::pair<std::string, bool> >& Channel::getUserOn() const {
+  return _users;
+}
 
-void Channel::addUser(Client client) { _Users.push_back(client); }
+void Channel::addUser(Client client, bool isOp) {
+  if (std::find(_users.begin(), _users.end(), client.getUser()) == _users.end())
+    _users.push_back(std::make_pair(client.getUser(), isOp));
+}
 
 void Channel::rmUser(Client client) {
   std::vector<Client>::iterator it = find(_Users.begin(), _Users.end(), client);
@@ -51,12 +60,12 @@ void Channel::rmUser(Client client) {
 const std::vector<Client>& Channel::getOPsOn() const { return _OPs; }
 
 void Channel::addOP(Client client) {
-  _Users.push_back(client);
+  _Users.push_back(client.getUser());
   client.setOp(true);
 }
 
 void Channel::rmUser(Client client) {
-  std::vector<Client>::iterator it = find(_OPs.begin(), _OPs.end(), client);
-  if (it != _OPs.end()) _OPs.erase(it);
+  std::vector<Client>::iterator it = find(_users.begin(), _users.end(), client);
+  if (it != _users.end()) _users.erase(it);
   client.setOp(false);
 }
