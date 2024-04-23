@@ -118,6 +118,7 @@ void	Server::selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes ) {
 			}
 			else
 			{
+				std::string buffer(buf, numbytes);
 				std::vector<Client>::iterator it = searchClient(i);
 				if (it != _Clients.end()) {
 					Client& client = *it;
@@ -127,11 +128,12 @@ void	Server::selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes ) {
 						disconnectClient(it);
 						return;
 					}
+					cmdHandler(buffer, client);
+					
 				} else {
 					disconnectClient(it);
 					return;
 				}
-				std::string buffer(buf, numbytes);
 				//parserTest(buffer, i);
 				for ( int j = 0; j < maxfds; j++ ) 
 				{
@@ -139,7 +141,6 @@ void	Server::selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes ) {
 						if (j != _serverSocket && j != i)
 							sendMessage(buf, j);
 				}
-				//commandos
 			}
 
 		}
@@ -168,4 +169,28 @@ void Server::disconnectClient(std::vector<Client>::iterator it){
     sendMessage(message, client.getFD());
     close(client.getFD());
 	_Clients.erase(it);
+}
+
+
+void Server::cmdHandler(std::string buffer, Client &client){
+	std::string cmd = buffer.substr(0, buffer.find(" "));
+	void (Server::*myCMDS[1])(std::string, Client&) = {&Server::joinChannel};
+	long unsigned int index;
+	std::string cmds[1] = {"JOIN"};
+
+	for (index = 0; index < sizeof(cmds)/sizeof(cmds[0]); index++){
+		if (cmd == cmds[index])
+			break;
+	}
+	if (index < sizeof(cmds)/sizeof(cmds[0]))
+		(this->*myCMDS[index])(buffer, client);
+}
+
+void Server::joinChannel(std::string buffer, Client &client){
+    std::string channel = buffer.substr(buffer.find(" ") + 1);
+    std::string nickname = client.getNick();
+    std::string user = client.getUser();
+
+	std::string output = ":" + nickname + "!" + user + " JOIN " + channel;
+	sendMessage(output, client.getFD());
 }

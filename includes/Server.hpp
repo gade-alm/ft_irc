@@ -54,6 +54,8 @@ class Server {
 		void	prepareFDs( void );
 		void	selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes );
 		int		getSocket( void );
+		void	cmdHandler(std::string buffer, Client &client);
+		void	joinChannel(std::string buffer, Client &client);
 		std::vector<Client>::iterator searchClient(int fd);
 		void disconnectClient(std::vector<Client>::iterator it);
 
