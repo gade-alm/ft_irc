@@ -1,6 +1,7 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
+# include "Channel.hpp"
 # include "Client.hpp"
 # include <iostream>
 # include <cstdio>
@@ -40,6 +41,7 @@ class Server {
 		fd_set	_selectfds;
 		fd_set	_masterfds;
 		std::vector<Client> _Clients;
+		std::vector<Channel> _Channels;
 
 	public:
 		int		maxfds;
@@ -56,7 +58,10 @@ class Server {
 		int		getSocket( void );
 		void	cmdHandler(std::string buffer, Client &client);
 		void	joinChannel(std::string buffer, Client &client);
+		void	quitServer(std::string buffer, Client &client);
+		void	channelPrep(std::string channelname, Client &client);
 		std::vector<Client>::iterator searchClient(int fd);
+		std::vector<Channel>::iterator Server::searchChannel(std::string channelname);
 		void disconnectClient(std::vector<Client>::iterator it);
 
 		~Server();

@@ -134,29 +134,25 @@ void	Server::selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes ) {
 					disconnectClient(it);
 					return;
 				}
-				//parserTest(buffer, i);
-				for ( int j = 0; j < maxfds; j++ ) 
-				{
-					if (FD_ISSET(j, &_masterfds))
-						if (j != _serverSocket && j != i)
-							sendMessage(buf, j);
-				}
 			}
 
 		}
 	}
 }
 
-/* static void parserTest ( std::string buffer, int i ) 
-{
-	std::cout << "msg from client " << i << ": " << buffer << std::endl;
-	return ;
-} */
-
 std::vector<Client>::iterator Server::searchClient(int fd){
 	std::vector<Client>::iterator it;
 	for (it = _Clients.begin(); it != _Clients.end(); ++it) {
     	if (it->getFD() == fd)
+       		break;
+	}
+	return it;
+}
+
+std::vector<Channel>::iterator Server::searchChannel(std::string channelname){
+	std::vector<Channel>::iterator it;
+	for (it = _Channels.begin(); it != _Channels.end(); ++it) {
+    	if (it->getName() == channelname)
        		break;
 	}
 	return it;
@@ -174,9 +170,9 @@ void Server::disconnectClient(std::vector<Client>::iterator it){
 
 void Server::cmdHandler(std::string buffer, Client &client){
 	std::string cmd = buffer.substr(0, buffer.find(" "));
-	void (Server::*myCMDS[1])(std::string, Client&) = {&Server::joinChannel};
+	void (Server::*myCMDS[2])(std::string, Client&) = {&Server::joinChannel, &Server::quitServer};
 	long unsigned int index;
-	std::string cmds[1] = {"JOIN"};
+	std::string cmds[2] = {"JOIN", "QUIT"};
 
 	for (index = 0; index < sizeof(cmds)/sizeof(cmds[0]); index++){
 		if (cmd == cmds[index])
@@ -187,10 +183,22 @@ void Server::cmdHandler(std::string buffer, Client &client){
 }
 
 void Server::joinChannel(std::string buffer, Client &client){
-    std::string channel = buffer.substr(buffer.find(" ") + 1);
-    std::string nickname = client.getNick();
-    std::string user = client.getUser();
+    std::string channelname = buffer.substr(buffer.find(" ") + 1);
+    if (channelname[0] != '#') 
+   		channelname = "#" + channelname;
+	channelPrep(channelname, client);
 
-	std::string output = ":" + nickname + "!" + user + " JOIN " + channel;
+	std::string output = ":" + client.getNick() + "!" + client.getUser() + " JOIN " + channelname;
 	sendMessage(output, client.getFD());
+}
+
+void Server::quitServer(std::string buffer, Client &client){
+	(void)buffer;
+	std::vector<Client>::iterator it = searchClient(client.getFD());
+	disconnectClient(it);
+}
+
+void	Server::channelPrep(std::string channelname, Client &client){
+	Channel channel(channelname);
+
 }

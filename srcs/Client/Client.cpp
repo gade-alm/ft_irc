@@ -107,8 +107,6 @@ bool Client::checkPass(std::string password, std::string input){
         //disconnect();
         return false;
     }
-    message = "You are authenticated. Welcome.";
-    sendMessage(message, _clientfd);
     return true;
 }
 
@@ -121,7 +119,7 @@ bool Client::checkNick(std::string input, std::vector<Client> &Clients){
         return false;
     }
     size_t end = input.find('\n', found + 5);
-    std::string afterNick = input.substr(found + 5, end - (found + 6));
+    std::string afterNick = input.substr(found + 5, end - (found + 5));
     if (!afterNick.empty() && afterNick[0] == ':')
         afterNick.erase(0, 1);
     std::vector<Client>::iterator it;
@@ -160,7 +158,7 @@ void Client::authenticateClient(std::string password, std::string input, std::ve
         return; 
     if(!checkName(input))
         return;
-    sendMessage("Welcome.", _clientfd);
+    sendMessage("You are authenticated. Welcome.", _clientfd);
     _authenticated = true;
     /* std::cout << "_nickname: " << _nickname << std::endl;
     std::cout << "_username: " << _username << std::endl;
