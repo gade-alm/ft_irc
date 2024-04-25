@@ -15,14 +15,13 @@ class Channel{
 		bool _limit;
 		long _userlimit;
 		std::vector<Client> _Users;
-		std::vector<Client> _OPs;
         
 	public:
 		Channel();
 		Channel(std::string name);
 		~Channel();
-		Channel( const Channel& );
-		Channel& operator=(const Channel & );
+		Channel( const Channel& copy);
+		Channel& operator=(const Channel & copy);
 
 		void setName(std::string name);
 		const std::string getName() const;
@@ -34,21 +33,27 @@ class Channel{
 		const std::string getTopic() const;
 
 		const std::vector<Client>& getUserOn() const;
-		void addUser(Client client);
-		void rmUser(Client client);
+		void addUser(Client &client);
+		void rmUser(Client &client);
 
 		const std::vector<Client>& getOPsOn() const;
 		void addOP(Client client);
 		void rmOP(Client client);
 
 		void setInvMode(bool mode);
-		const bool getInvMode() const;
+		bool getInvMode() const;
 
 		void setLimit(long limit);
-		const long getLimit() const;
+		long getLimit() const;
 
 		void setLimitMode(bool mode);
-		const bool getLimitMode() const;
+		bool getLimitMode() const;
+		std::vector<Client>::iterator endUsers();
+		std::vector<Client>::iterator beginUsers();
+
+		std::vector<Client>::iterator searchClient(int fd);
+
+		void printUsers();
 
 
 };

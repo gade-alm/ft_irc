@@ -1,5 +1,6 @@
 FILENAME = Client/Client.cpp \
 			Server/Server.cpp \
+			Channel/Channel.cpp \
 					 main.cpp
 
 SRCS_DIR = srcs

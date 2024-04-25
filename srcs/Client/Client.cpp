@@ -24,6 +24,9 @@ Client& Client::operator=( const Client & copy){
     return *this;
 }
 
+bool Client::operator==(const Client& copy) const {
+    return _clientfd == copy._clientfd;
+}
 const std::string Client::getNick() const {
     return _nickname;
 }
@@ -60,7 +63,7 @@ void Client::connect(std::string password){
 
     char		buffer[1024];
 	ssize_t		n = recv(_clientfd, buffer, sizeof(buffer) - 1, 0);
-    std::cout << buffer << std::endl;
+    //std::cout << buffer << std::endl;
     if (n == -1)
 		throw(std::runtime_error("Error. Failed in rcv."));
 	else if (n == 0){
@@ -118,7 +121,7 @@ bool Client::checkNick(std::string input, std::vector<Client> &Clients){
         sendMessage(message, _clientfd);
         return false;
     }
-    size_t end = input.find('\n', found + 5);
+    size_t end = input.find('\r', found + 5);
     std::string afterNick = input.substr(found + 5, end - (found + 5));
     if (!afterNick.empty() && afterNick[0] == ':')
         afterNick.erase(0, 1);
@@ -151,7 +154,7 @@ bool Client::checkName(std::string input){
 }
 
 void Client::authenticateClient(std::string password, std::string input, std::vector<Client> &Clients){
-    std::cout << input << std::endl;
+    //std::cout << input << std::endl;
     if(!checkPass(password, input))
         return;
     if(!checkNick(input, Clients))
@@ -160,7 +163,7 @@ void Client::authenticateClient(std::string password, std::string input, std::ve
         return;
     sendMessage("You are authenticated. Welcome.", _clientfd);
     _authenticated = true;
-    /* std::cout << "_nickname: " << _nickname << std::endl;
+   /*  std::cout << "_nickname: " << _nickname << std::endl;
     std::cout << "_username: " << _username << std::endl;
     std::cout << _nickname.size() << std::endl;
 	std::cout << _username.size() << std::endl; */

@@ -9,14 +9,15 @@ Channel::Channel(std::string name) : _name(name){
 Channel::~Channel(){
 }
 
-Channel::Channel( const Channel& ){
+Channel::Channel( const Channel& copy){
+    *this = copy;
 }
 
-Channel& Channel::operator=( const Channel & ){
+Channel& Channel::operator=( const Channel & copy){
+    _name = copy._name;
+    _Users = copy._Users;
     return *this;
 }
-
-
 
 void Channel::setName(std::string name){
     _name = name;
@@ -47,15 +48,15 @@ void Channel::setInvMode(bool mode){
     _inviteonly = mode;
 }
 
-const bool Channel::getInvMode() const {
+bool Channel::getInvMode() const {
     return _inviteonly;
 }
 
 void Channel::setLimit(long limit){
-    _limit = _userlimit;
+    _limit = limit;
 }
 
-const long Channel::getLimit() const {
+long Channel::getLimit() const {
     return _userlimit;
 }
 
@@ -63,39 +64,41 @@ void Channel::setLimitMode(bool mode){
     _limit = mode;
 }
 
-const bool Channel::getInvMode() const {
-    return _limit;
-}
-
 const std::vector<Client>& Channel::getUserOn() const {
     return _Users;
 }
 
-void Channel::addUser(Client client){
+void Channel::addUser(Client &client){
     _Users.push_back(client);
 }
 
-void Channel::rmUser(Client client){
+void Channel::rmUser(Client &client){
     std::vector<Client>::iterator it = find(_Users.begin(), _Users.end(), client);
     if (it != _Users.end())
         _Users.erase(it);
 }
 
-const std::vector<Client>& Channel::getOPsOn() const {
-    return _OPs;
+std::vector<Client>::iterator Channel::searchClient(int fd){
+	std::vector<Client>::iterator it;
+	for (it = _Users.begin(); it != _Users.end(); ++it) {
+    	if (it->getFD() == fd)
+       		break;
+	}
+	return it;
 }
 
-void Channel::addOP(Client client){
-    _Users.push_back(client);
-    client.setOp(true);
+std::vector<Client>::iterator Channel::endUsers(){
+    return _Users.end();
 }
 
-void Channel::rmUser(Client client){
-    std::vector<Client>::iterator it = find(_OPs.begin(), _OPs.end(), client);
-    if (it != _OPs.end())
-        _OPs.erase(it);
-    client.setOp(false);
+std::vector<Client>::iterator Channel::beginUsers(){
+    return _Users.begin();
 }
 
-
-
+void Channel::printUsers(){
+    //std::cout << "CHEGOU" << std::endl;
+    for(std::vector<Client>::iterator it = _Users.begin(); it != _Users.end(); it++){
+        std::cout << "Client: " << it->getNick() << std::endl;
+        std::cout << "Is OP? " << it->isOP() << std::endl; 
+    }
+}

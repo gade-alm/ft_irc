@@ -169,10 +169,12 @@ void Server::disconnectClient(std::vector<Client>::iterator it){
 
 
 void Server::cmdHandler(std::string buffer, Client &client){
+	//std::cout << buffer << std::endl;
 	std::string cmd = buffer.substr(0, buffer.find(" "));
-	void (Server::*myCMDS[2])(std::string, Client&) = {&Server::joinChannel, &Server::quitServer};
+	void (Server::*myCMDS[3])(std::string, Client&) = {&Server::joinChannel, &Server::quitServer \
+	, &Server::deliveryMSG};
 	long unsigned int index;
-	std::string cmds[2] = {"JOIN", "QUIT"};
+	std::string cmds[3] = {"JOIN", "QUIT", "PRIVMSG"};
 
 	for (index = 0; index < sizeof(cmds)/sizeof(cmds[0]); index++){
 		if (cmd == cmds[index])
@@ -183,11 +185,10 @@ void Server::cmdHandler(std::string buffer, Client &client){
 }
 
 void Server::joinChannel(std::string buffer, Client &client){
-    std::string channelname = buffer.substr(buffer.find(" ") + 1);
+    std::string channelname = buffer.substr(buffer.find("#"), (buffer.find("\r") - buffer.find("#")));
     if (channelname[0] != '#') 
    		channelname = "#" + channelname;
 	channelPrep(channelname, client);
-
 	std::string output = ":" + client.getNick() + "!" + client.getUser() + " JOIN " + channelname;
 	sendMessage(output, client.getFD());
 }
@@ -195,10 +196,46 @@ void Server::joinChannel(std::string buffer, Client &client){
 void Server::quitServer(std::string buffer, Client &client){
 	(void)buffer;
 	std::vector<Client>::iterator it = searchClient(client.getFD());
+	//Missing Channels disconnect.
 	disconnectClient(it);
 }
 
 void	Server::channelPrep(std::string channelname, Client &client){
+	
+	std::vector<Channel>::iterator itChannel = searchChannel(channelname);
+	if (itChannel != _Channels.end()){
+		if (itChannel->searchClient(client.getFD()) == itChannel->endUsers())
+			itChannel->addUser(client);
+		//itChannel->printUsers();
+		return ;
+	}
 	Channel channel(channelname);
+	channel.addUser(client);
+	std::vector<Client>::iterator itClient = channel.searchClient(client.getFD());
+	itClient->setOp(true);
+	_Channels.push_back(channel);
+	
+	itChannel = searchChannel(channelname);
+	//itChannel->printUsers();
+}
 
+void	Server::deliveryMSG(std::string buffer, Client &client){
+	size_t start = buffer.find("#");
+	size_t end = buffer.find(" ", start);
+
+	std::string channelname = buffer.substr(start, (end - start));
+	//std::cout << "CHANNEL NAME: " << channelname << std::endl;
+	start = buffer.find(":", end + 1);
+	std::string message = ":" + client.getNick() + "!~" + client.getUser() + " PRIVMSG "\
+	+ channelname + " " + buffer.substr(start);
+	//std::cout << "MESSAGE: " << message << std::endl;
+	std::vector<Channel>::iterator itChannel = searchChannel(channelname);
+	//std::cout << itChannel->getName() << std::endl;
+
+	for(std::vector<Client>::iterator itClient = itChannel->beginUsers(); itClient != itChannel->endUsers(); itClient++){
+		if(itClient->getFD() != client.getFD())
+			sendMessage(message, itClient->getFD());
+	}
+	//std::string channelname = buffer.substr(buffer.find(" ", ));
+	//PRIVMSG #A :fala jamal
 }
