@@ -14,7 +14,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <string>
 #include <vector>
 
 #include "Channel.hpp"
@@ -29,7 +28,7 @@
 
 class Server {
  private:
-  Server(const Server&);
+  Server(const Server &);
   Server();
 
   int _serverSocket;
@@ -43,13 +42,13 @@ class Server {
   fd_set _selectfds;
   fd_set _masterfds;
   std::vector<Client> _Clients;
-  std::vector<Channel> _channels;
+  std::vector<Channel> _Channels;
 
  public:
   int maxfds;
   char buf[1024];
   sockaddr_in serverAddr;
-  Server(const char* portValue, const std::string& passwordValue);
+  Server(const char *portValue, const std::string &passwordValue);
 
   void setSocket(int socketFd);
   void setBind(void);
@@ -58,8 +57,13 @@ class Server {
   void prepareFDs(void);
   void selectLoop(int i, struct sockaddr_in _clientaddr, int numbytes);
   int getSocket(void);
+  void cmdHandler(std::string buffer, Client &client);
+  void joinChannel(std::string buffer, Client &client);
+  void quitServer(std::string buffer, Client &client);
+  void deliveryMSG(std::string buffer, Client &client);
+  void channelPrep(std::string channelname, Client &client);
   std::vector<Client>::iterator searchClient(int fd);
-  bool AddChannel(std::string& name, Client& client);
+  std::vector<Channel>::iterator searchChannel(std::string channelname);
   void disconnectClient(std::vector<Client>::iterator it);
 
   ~Server();

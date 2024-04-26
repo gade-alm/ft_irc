@@ -17,6 +17,8 @@ class Client {
   bool _authenticated;
   bool _registred;
   bool checkPass(std::string password, std::string input);
+  bool checkName(std::string input);
+  bool checkNick(std::string input, std::vector<Client>& Clients);
 
  public:
   sockaddr_in _client_address;
@@ -25,6 +27,7 @@ class Client {
   Client(const Client& copy);
   ~Client();
   Client& operator=(const Client& copy);
+  bool operator==(const Client& copy) const;
   void setAuth(bool auth);
   bool getAuth();
   void setReg(bool reg);
@@ -37,8 +40,6 @@ class Client {
   void setFD(int FD);
   bool isOP() const;
   void setOp(bool op);
-  bool checkName(std::string input);
-  bool checkNick(std::string input, std::vector<Client>& Clients);
   void authenticateClient(std::string password, std::string input,
                           std::vector<Client>& Clients);
   void connect(std::string password);

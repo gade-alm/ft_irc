@@ -17,36 +17,38 @@ class Channel {
   bool _inviteonly;
   bool _limit;
   long _userlimit;
-  std::vector<std::pair<std::string, bool> > _users;
+  std::vector<Client> _Users;
 
  public:
   Channel();
-  Channel(std::string name, std::string password);
   Channel(std::string name);
   ~Channel();
-  Channel(const Channel&);
-  Channel& operator=(const Channel&);
-  bool operator==(Channel const& value);
+  Channel(const Channel& copy);
 
   void setName(std::string name);
   const std::string getName() const;
 
   void setPassword(std::string password);
   const std::string getPassword() const;
+  const std::vector<Client>& getUserOn() const;
+  void addUser(Client& client);
+  void rmUser(Client& client);
 
   void setTopic(std::string topic);
   const std::string getTopic() const;
 
-  const std::vector<std::pair<std::string, bool> >& getUserOn() const;
-  void addUser(Client client, bool isOp);
-  void rmUser(Client client);
-
-  const std::vector<std::pair<std::string, bool> >& getOPsOn() const;
   void addOP(Client client);
   void rmOP(Client client);
 
   void setInvMode(bool mode);
   const bool getInvMode() const;
+
+  std::vector<Client>::iterator endUsers();
+  std::vector<Client>::iterator beginUsers();
+
+  std::vector<Client>::iterator searchClient(int fd);
+
+  void printUsers();
 
   void setLimit(long limit);
   const long getLimit() const;
