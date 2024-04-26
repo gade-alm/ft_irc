@@ -43,6 +43,7 @@ class Server {
 		std::vector<Client> _Clients;
 		std::vector<Channel> _Channels;
 
+
 	public:
 		int		maxfds;
 		char	buf[1024];
@@ -61,6 +62,7 @@ class Server {
 		void	quitServer(std::string buffer, Client &client);
 		void	deliveryMSG(std::string buffer, Client &client);
 		void	channelPrep(std::string channelname, Client &client);
+		void	kickFromChannel(std::string buffer, Client &client);
 		std::vector<Client>::iterator searchClient(int fd);
 		std::vector<Channel>::iterator searchChannel(std::string channelname);
 		void disconnectClient(std::vector<Client>::iterator it);

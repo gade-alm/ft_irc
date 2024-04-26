@@ -74,8 +74,9 @@ void Channel::addUser(Client &client){
 
 void Channel::rmUser(Client &client){
     std::vector<Client>::iterator it = find(_Users.begin(), _Users.end(), client);
-    if (it != _Users.end())
-        _Users.erase(it);
+    if (it == _Users.end())
+        return;
+    _Users.erase(it);
 }
 
 std::vector<Client>::iterator Channel::searchClient(int fd){
@@ -86,6 +87,18 @@ std::vector<Client>::iterator Channel::searchClient(int fd){
 	}
 	return it;
 }
+
+std::vector<Client>::iterator Channel::searchClient(std::string name){
+	std::vector<Client>::iterator it;
+	for (it = _Users.begin(); it != _Users.end(); ++it) {
+    	if (it->getNick() == name){
+            std::cout << "True" << std::endl;
+       		break;
+        }
+	}
+	return it;
+}
+
 
 std::vector<Client>::iterator Channel::endUsers(){
     return _Users.end();
@@ -98,7 +111,7 @@ std::vector<Client>::iterator Channel::beginUsers(){
 void Channel::printUsers(){
     //std::cout << "CHEGOU" << std::endl;
     for(std::vector<Client>::iterator it = _Users.begin(); it != _Users.end(); it++){
-        std::cout << "Client: " << it->getNick() << std::endl;
+        std::cout << "Client: " << it->getNick() << " SIZE: " << it->getNick().size() << std::endl;
         std::cout << "Is OP? " << it->isOP() << std::endl; 
     }
 }

@@ -52,6 +52,7 @@ class Channel{
 		std::vector<Client>::iterator beginUsers();
 
 		std::vector<Client>::iterator searchClient(int fd);
+		std::vector<Client>::iterator searchClient(std::string name);
 
 		void printUsers();
 

@@ -39,7 +39,7 @@ class Client{
 		void setFD(int FD);
 		bool isOP() const;
 		void setOp(bool op);
-		void authenticateClient(std::string password, std::string input, std::vector<Client> &Clients);
+		bool authenticateClient(std::string password, std::string input, std::vector<Client> &Clients);
 		void connect(std::string password);
 		void disconnect();
 

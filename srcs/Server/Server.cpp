@@ -122,12 +122,11 @@ void	Server::selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes ) {
 				std::vector<Client>::iterator it = searchClient(i);
 				if (it != _Clients.end()) {
 					Client& client = *it;
-					if(!client.getAuth())
-						client.authenticateClient(_password, buf, _Clients);
-					if(!client.getAuth()){
+					if(!client.authenticateClient(_password, buf, _Clients)){
 						disconnectClient(it);
 						return;
 					}
+					//std::cout << "CLIENTFD: " << client.getFD() << " is Auth: " << client.getAuth() << std::endl;
 					cmdHandler(buffer, client);
 					
 				} else {
@@ -138,6 +137,7 @@ void	Server::selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes ) {
 
 		}
 	}
+	memset(buf, 0, sizeof(buf));
 }
 
 std::vector<Client>::iterator Server::searchClient(int fd){
@@ -171,10 +171,10 @@ void Server::disconnectClient(std::vector<Client>::iterator it){
 void Server::cmdHandler(std::string buffer, Client &client){
 	//std::cout << buffer << std::endl;
 	std::string cmd = buffer.substr(0, buffer.find(" "));
-	void (Server::*myCMDS[3])(std::string, Client&) = {&Server::joinChannel, &Server::quitServer \
-	, &Server::deliveryMSG};
+	void (Server::*myCMDS[4])(std::string, Client&) = {&Server::joinChannel, &Server::quitServer \
+	, &Server::deliveryMSG, &Server::kickFromChannel};
 	long unsigned int index;
-	std::string cmds[3] = {"JOIN", "QUIT", "PRIVMSG"};
+	std::string cmds[4] = {"JOIN", "QUIT", "PRIVMSG", "KICK"};
 
 	for (index = 0; index < sizeof(cmds)/sizeof(cmds[0]); index++){
 		if (cmd == cmds[index])
@@ -185,7 +185,7 @@ void Server::cmdHandler(std::string buffer, Client &client){
 }
 
 void Server::joinChannel(std::string buffer, Client &client){
-    std::string channelname = buffer.substr(buffer.find("#"), (buffer.find("\r") - buffer.find("#")));
+    std::string channelname = buffer.substr(buffer.find(" ") + 1, (buffer.find("\r") - buffer.find("#")));
     if (channelname[0] != '#') 
    		channelname = "#" + channelname;
 	channelPrep(channelname, client);
@@ -206,7 +206,7 @@ void	Server::channelPrep(std::string channelname, Client &client){
 	if (itChannel != _Channels.end()){
 		if (itChannel->searchClient(client.getFD()) == itChannel->endUsers())
 			itChannel->addUser(client);
-		//itChannel->printUsers();
+		itChannel->printUsers();
 		return ;
 	}
 	Channel channel(channelname);
@@ -236,6 +236,57 @@ void	Server::deliveryMSG(std::string buffer, Client &client){
 		if(itClient->getFD() != client.getFD())
 			sendMessage(message, itClient->getFD());
 	}
-	//std::string channelname = buffer.substr(buffer.find(" ", ));
-	//PRIVMSG #A :fala jamal
+}
+
+void	Server::kickFromChannel(std::string buffer, Client &client){
+	size_t start = buffer.find("#");
+	size_t end = buffer.find(" ", start);
+	std::string nickname;
+	std::string channelname = buffer.substr(start, end - start);
+	std::vector<Channel>::iterator it = searchChannel(channelname);
+	//std::cout << "CHANNELNAME: " << channelname << " SIZE: " << channelname.size() << std::endl;
+	start = end + 1;
+	end = buffer.find(" ", start);
+	std::string nick;
+	std::string cmd;
+	if (end == std::string::npos){
+		end = buffer.find("\r", start);
+		nick = buffer.substr(start, end - start);
+		std::cout << "NICK: " << nick << " SIZE: " << nick.size() << std::endl;
+		if (!it->searchClient(client.getNick())->isOP()){
+			sendMessage("You dont have the rights to kick Users.", client.getFD());
+			return;
+		}
+		if(it->searchClient(nick) == it->endUsers()){
+			sendMessage("User not found.", client.getFD());
+			return;
+		}
+		cmd = ":" + client.getNick() + "!" + client.getUser()\
+		+ " KICK " + channelname + " " + nick + "\r\n";
+		for(std::vector<Client>::iterator itClient = it->beginUsers(); itClient != it->endUsers(); itClient++){
+			sendMessage(cmd, itClient->getFD());
+		}
+	// :NickName!UserName@host KICK #channelname :reason
+		it->rmUser(*it->searchClient(nick));
+		//sendMessage(cmd, client.getFD());
+		return;
+	}
+	/* nick = buffer.substr(start, end - start);
+	std::cout << "NICK: " << nick << " SIZE: " << nick.size() << std::endl;
+	start = end + 1;
+	end = buffer.find("\r", start);
+	std::string reason = buffer.substr(start, end - start);
+	if (!it->searchClient(client.getNick())->isOP()){
+		sendMessage("You dont have the rights to kick Users.", client.getFD());
+		return;
+	}
+	if(!it->rmUser(nick)){
+		sendMessage("User not found.", client.getFD());
+		return;
+	}
+	cmd = "KICK " + channelname + " " + nick + " " + reason + "\r\n";
+	sendMessage(cmd, client.getFD()); */
+	// KICK #channelname username reason
+	// :server_name KICK #channelname username :reason
+
 }
