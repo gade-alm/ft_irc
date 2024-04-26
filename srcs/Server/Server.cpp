@@ -266,9 +266,7 @@ void	Server::kickFromChannel(std::string buffer, Client &client){
 		for(std::vector<Client>::iterator itClient = it->beginUsers(); itClient != it->endUsers(); itClient++){
 			sendMessage(cmd, itClient->getFD());
 		}
-	// :NickName!UserName@host KICK #channelname :reason
 		it->rmUser(*it->searchClient(nick));
-		//sendMessage(cmd, client.getFD());
 		return;
 	}
 	/* nick = buffer.substr(start, end - start);
