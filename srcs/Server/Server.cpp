@@ -185,6 +185,10 @@ void Server::cmdHandler(std::string buffer, Client &client){
 }
 
 void Server::joinChannel(std::string buffer, Client &client){
+	if (buffer.find("#") == std::string::npos) {
+		std::cout << "ERROR" << std::endl;
+		return ;
+	}
     std::string channelname = buffer.substr(buffer.find("#"), (buffer.find("\r") - buffer.find("#")));
     if (channelname[0] != '#') 
    		channelname = "#" + channelname;
