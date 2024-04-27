@@ -119,6 +119,7 @@ void	Server::selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes ) {
 			else
 			{
 				std::string buffer(buf, numbytes);
+				//std::cout << buffer << std::endl;
 				std::vector<Client>::iterator it = searchClient(i);
 				if (it != _Clients.end()) {
 					Client& client = *it;
@@ -152,8 +153,12 @@ std::vector<Client>::iterator Server::searchClient(int fd){
 std::vector<Channel>::iterator Server::searchChannel(std::string channelname){
 	std::vector<Channel>::iterator it;
 	for (it = _Channels.begin(); it != _Channels.end(); ++it) {
-    	if (it->getName() == channelname)
+		//std::cout << "ClientName: " << it->getName() << " SIZE: "<< it->getName().size() << std::endl;
+    	//std::cout << "Name: " << channelname << " SIZE: "<< channelname.size() << std::endl;
+    	if (it->getName() == channelname){
+			//std::cout << "TRUE CHANNEL" << std::endl;
        		break;
+		}
 	}
 	return it;
 }
@@ -192,6 +197,15 @@ void Server::joinChannel(std::vector<std::string> CMD, Client &client){
 	channelPrep(channelname, client);
 	std::string output = ":" + client.getNick() + "!" + client.getUser() + " JOIN " + channelname;
 	sendMessage(output, client.getFD());
+
+	std::string message = ":" + client.getNick() + "!" + client.getUser() + " JOIN " + channelname + "\r\n";
+	std::vector<Channel>::iterator itChannel = searchChannel(channelname);
+	for(std::vector<Client>::iterator itClient = itChannel->beginUsers(); itClient != itChannel->endUsers(); itClient++){
+		if(itClient->getFD() != client.getFD())
+			sendMessage(message, itClient->getFD());
+	}
+/* 	std::vector<Channel>::iterator itChannel = searchChannel(channelname);
+	itChannel->printUsers(); */
 }
 
 void Server::quitServer(std::vector<std::string> CMD, Client &client){
@@ -207,7 +221,6 @@ void	Server::channelPrep(std::string channelname, Client &client){
 	if (itChannel != _Channels.end()){
 		if (itChannel->searchClient(client.getFD()) == itChannel->endUsers())
 			itChannel->addUser(client);
-		itChannel->printUsers();
 		return ;
 	}
 	Channel channel(channelname);
@@ -236,61 +249,41 @@ void	Server::deliveryMSG(std::vector<std::string> CMD, Client &client){
 	}
 }
 
+std::string prepReason(std::vector<std::string> CMD){
+	std::string reason;
+	for(std::vector<std::string>::iterator it = CMD.begin() + 3; it != CMD.end(); it++){
+		if (*it != CMD[3])
+			reason += " ";
+		reason += *it;
+	}
+	return reason;
+
+}
+
 void	Server::kickFromChannel(std::vector<std::string> CMD, Client &client){
 	// KICK #channelname username reason
 	// :server_name KICK #channelname username :reason
-	std::string nickname = CMD[1];
-	std::string channelname = CMD[2];
-	std::string reason = (CMD.size() == 4) ? CMD[3] : "";
-
-	if (reason.empty())
-		std::cout << "OPA";
-	(void)client;
-/* 	size_t start = buffer.find("#");
-	size_t end = buffer.find(" ", start);
-	std::string nickname;
-	std::string channelname = buffer.substr(start, end - start);
+	std::string channelname = CMD[1];
+	std::string nick = CMD[2];
+	std::string reason = (CMD.size() >= 4) ? prepReason(CMD) : "";
 	std::vector<Channel>::iterator it = searchChannel(channelname);
-	//std::cout << "CHANNELNAME: " << channelname << " SIZE: " << channelname.size() << std::endl;
-	start = end + 1;
-	end = buffer.find(" ", start);
-	std::string nick;
-	std::string cmd;
-	if (end == std::string::npos){
-		end = buffer.find("\r", start);
-		nick = buffer.substr(start, end - start);
-		std::cout << "NICK: " << nick << " SIZE: " << nick.size() << std::endl;
-		if (!it->searchClient(client.getNick())->isOP()){
-			sendMessage("You dont have the rights to kick Users.", client.getFD());
-			return;
-		}
-		if(it->searchClient(nick) == it->endUsers()){
-			sendMessage("User not found.", client.getFD());
-			return;
-		}
-		cmd = ":" + client.getNick() + "!" + client.getUser()\
-		+ " KICK " + channelname + " " + nick + "\r\n";
-		for(std::vector<Client>::iterator itClient = it->beginUsers(); itClient != it->endUsers(); itClient++){
-			sendMessage(cmd, itClient->getFD());
-		}
-		it->rmUser(*it->searchClient(nick));
+	if (it == _Channels.end())
 		return;
-	} */
-	/* nick = buffer.substr(start, end - start);
-	std::cout << "NICK: " << nick << " SIZE: " << nick.size() << std::endl;
-	start = end + 1;
-	end = buffer.find("\r", start);
-	std::string reason = buffer.substr(start, end - start);
 	if (!it->searchClient(client.getNick())->isOP()){
 		sendMessage("You dont have the rights to kick Users.", client.getFD());
 		return;
 	}
-	if(!it->rmUser(nick)){
+	if(it->searchClient(nick) == it->endUsers()){
 		sendMessage("User not found.", client.getFD());
 		return;
 	}
-	cmd = "KICK " + channelname + " " + nick + " " + reason + "\r\n";
-	sendMessage(cmd, client.getFD()); */
+	std::string cmd = ":" + client.getNick() + "!" + client.getUser()\
+	+ " KICK " + channelname + " " + nick + ((reason.empty()) ? "" : (" " + reason)) + "\r\n";
+	for(std::vector<Client>::iterator itClient = it->beginUsers(); itClient != it->endUsers(); itClient++){
+		sendMessage(cmd, itClient->getFD());
+	}
+	it->rmUser(*it->searchClient(nick));
+	return;
 
 }
 
