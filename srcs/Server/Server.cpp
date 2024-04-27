@@ -170,8 +170,9 @@ void Server::disconnectClient(std::vector<Client>::iterator it){
 
 void Server::cmdHandler(std::string buffer, Client &client){
 	//std::cout << buffer << std::endl;
+	std::vector<std::string> CMD = parseCMD(buffer);
 	std::string cmd = buffer.substr(0, buffer.find(" "));
-	void (Server::*myCMDS[4])(std::string, Client&) = {&Server::joinChannel, &Server::quitServer \
+	void (Server::*myCMDS[4])(std::vector<std::string>, Client&) = {&Server::joinChannel, &Server::quitServer \
 	, &Server::deliveryMSG, &Server::kickFromChannel};
 	long unsigned int index;
 	std::string cmds[4] = {"JOIN", "QUIT", "PRIVMSG", "KICK"};
@@ -181,11 +182,11 @@ void Server::cmdHandler(std::string buffer, Client &client){
 			break;
 	}
 	if (index < sizeof(cmds)/sizeof(cmds[0]))
-		(this->*myCMDS[index])(buffer, client);
+		(this->*myCMDS[index])(CMD, client);
 }
 
-void Server::joinChannel(std::string buffer, Client &client){
-    std::string channelname = buffer.substr(buffer.find(" ") + 1, (buffer.find("\r") - buffer.find("#")));
+void Server::joinChannel(std::vector<std::string> CMD, Client &client){
+    std::string channelname = CMD[1];
     if (channelname[0] != '#') 
    		channelname = "#" + channelname;
 	channelPrep(channelname, client);
@@ -193,8 +194,8 @@ void Server::joinChannel(std::string buffer, Client &client){
 	sendMessage(output, client.getFD());
 }
 
-void Server::quitServer(std::string buffer, Client &client){
-	(void)buffer;
+void Server::quitServer(std::vector<std::string> CMD, Client &client){
+	(void)CMD;
 	std::vector<Client>::iterator it = searchClient(client.getFD());
 	//Missing Channels disconnect.
 	disconnectClient(it);
@@ -219,15 +220,12 @@ void	Server::channelPrep(std::string channelname, Client &client){
 	//itChannel->printUsers();
 }
 
-void	Server::deliveryMSG(std::string buffer, Client &client){
-	size_t start = buffer.find("#");
-	size_t end = buffer.find(" ", start);
+void	Server::deliveryMSG(std::vector<std::string> CMD, Client &client){
 
-	std::string channelname = buffer.substr(start, (end - start));
+	std::string channelname = CMD[1];
 	//std::cout << "CHANNEL NAME: " << channelname << std::endl;
-	start = buffer.find(":", end + 1);
 	std::string message = ":" + client.getNick() + "!~" + client.getUser() + " PRIVMSG "\
-	+ channelname + " " + buffer.substr(start);
+	+ channelname + " " + CMD[2];
 	//std::cout << "MESSAGE: " << message << std::endl;
 	std::vector<Channel>::iterator itChannel = searchChannel(channelname);
 	//std::cout << itChannel->getName() << std::endl;
@@ -238,8 +236,17 @@ void	Server::deliveryMSG(std::string buffer, Client &client){
 	}
 }
 
-void	Server::kickFromChannel(std::string buffer, Client &client){
-	size_t start = buffer.find("#");
+void	Server::kickFromChannel(std::vector<std::string> CMD, Client &client){
+	// KICK #channelname username reason
+	// :server_name KICK #channelname username :reason
+	std::string nickname = CMD[1];
+	std::string channelname = CMD[2];
+	std::string reason = (CMD.size() == 4) ? CMD[3] : "";
+
+	if (reason.empty())
+		std::cout << "OPA";
+	(void)client;
+/* 	size_t start = buffer.find("#");
 	size_t end = buffer.find(" ", start);
 	std::string nickname;
 	std::string channelname = buffer.substr(start, end - start);
@@ -268,7 +275,7 @@ void	Server::kickFromChannel(std::string buffer, Client &client){
 		}
 		it->rmUser(*it->searchClient(nick));
 		return;
-	}
+	} */
 	/* nick = buffer.substr(start, end - start);
 	std::cout << "NICK: " << nick << " SIZE: " << nick.size() << std::endl;
 	start = end + 1;
@@ -284,7 +291,30 @@ void	Server::kickFromChannel(std::string buffer, Client &client){
 	}
 	cmd = "KICK " + channelname + " " + nick + " " + reason + "\r\n";
 	sendMessage(cmd, client.getFD()); */
-	// KICK #channelname username reason
-	// :server_name KICK #channelname username :reason
 
+}
+
+
+std::vector<std::string> Server::parseCMD(std::string buffer){
+	size_t start = 0;
+	size_t end;
+	std::string word;
+
+	std::vector<std::string> CMD;
+	//std::cout << "ENTROU" << std::endl;
+	while (end != buffer.size() - 2){
+		end = buffer.find(" ", start);
+		if (end == std::string::npos){
+			end = buffer.find("\r", start);
+			word = buffer.substr(start, end - start);
+			CMD.push_back(word);
+			//std::cout << "WORD: " << word << " SIZE " << word.size() << std::endl;
+			break ;
+		}
+		word = buffer.substr(start, end - start);
+		CMD.push_back(word);
+		//std::cout << "WORD: " << word << " SIZE " << word.size() << std::endl;
+		start = end + 1;
+	}
+	return CMD;
 }
