@@ -79,6 +79,14 @@ void Channel::rmUser(Client &client){
     _Users.erase(it);
 }
 
+void Channel::setTopicMode(bool topic){
+    _topicneedop = topic;
+}
+
+bool Channel::getTopicMode() const{
+    return _topicneedop;
+}
+
 std::vector<Client>::iterator Channel::searchClient(int fd){
 	std::vector<Client>::iterator it;
 	for (it = _Users.begin(); it != _Users.end(); ++it) {

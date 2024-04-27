@@ -177,10 +177,10 @@ void Server::cmdHandler(std::string buffer, Client &client){
 	//std::cout << buffer << std::endl;
 	std::vector<std::string> CMD = parseCMD(buffer);
 	std::string cmd = buffer.substr(0, buffer.find(" "));
-	void (Server::*myCMDS[4])(std::vector<std::string>, Client&) = {&Server::joinChannel, &Server::quitServer \
-	, &Server::deliveryMSG, &Server::kickFromChannel};
+	void (Server::*myCMDS[5])(std::vector<std::string>, Client&) = {&Server::joinChannel, &Server::quitServer \
+	, &Server::deliveryMSG, &Server::kickFromChannel, &Server::topicChannel};
 	long unsigned int index;
-	std::string cmds[4] = {"JOIN", "QUIT", "PRIVMSG", "KICK"};
+	std::string cmds[5] = {"JOIN", "QUIT", "PRIVMSG", "KICK", "TOPIC"};
 
 	for (index = 0; index < sizeof(cmds)/sizeof(cmds[0]); index++){
 		if (cmd == cmds[index])
@@ -310,4 +310,27 @@ std::vector<std::string> Server::parseCMD(std::string buffer){
 		start = end + 1;
 	}
 	return CMD;
+}
+
+void	Server::topicChannel(std::vector<std::string> CMD, Client &client){
+	//:Nick!User@host TOPIC #channelname :new topic\r\n
+	std::string channelName = CMD[1];
+    std::vector<Channel>::iterator it = searchChannel(channelName);
+	if (CMD.size() == 2){
+        if (it != _Channels.end()) {
+            std::string topic = it->getTopic();
+            std::string msg = ((!topic.empty()) ? ":IRC 332 " : ":IRC 331 ") + client.getNick() + " " + channelName + \
+			" :" + ((!topic.empty()) ? topic : "No topic is set")+ "\r\n";
+            sendMessage(msg, client.getFD());
+        }
+		return ;
+	}
+
+	if (it->getTopicMode() && !it->searchClient(client.getFD())->isOP()){
+		std::string msg = ":IRC 482 " + client.getNick() + " " + channelName + " :You're not channel operator\r\n";
+        sendMessage(msg, client.getFD());
+		return ;
+	}
+	
+
 }

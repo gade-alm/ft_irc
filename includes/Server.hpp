@@ -63,6 +63,7 @@ class Server {
 		void	quitServer(std::vector<std::string> CMD, Client &client);
 		void	deliveryMSG(std::vector<std::string> CMD, Client &client);
 		void	kickFromChannel(std::vector<std::string> CMD, Client &client);
+		void	topicChannel(std::vector<std::string> CMD, Client &client);
 		void	channelPrep(std::string channelname, Client &client);
 		std::vector<Client>::iterator searchClient(int fd);
 		std::vector<Channel>::iterator searchChannel(std::string channelname);
