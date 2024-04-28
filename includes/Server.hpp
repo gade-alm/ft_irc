@@ -66,6 +66,7 @@ class Server {
 		void	topicChannel(std::vector<std::string> CMD, Client &client);
 		void	channelPrep(std::string channelname, Client &client);
 		std::vector<Client>::iterator searchClient(int fd);
+		std::vector<Client>::iterator searchClient(std::string name);
 		std::vector<Channel>::iterator searchChannel(std::string channelname);
 		void disconnectClient(std::vector<Client>::iterator it);
 

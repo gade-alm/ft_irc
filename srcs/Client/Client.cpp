@@ -94,7 +94,8 @@ bool Client::checkPass(std::string password, std::string input){
     std::string message;
     size_t found = input.find("PASS");
     if (found == std::string::npos){
-        message = "Server needs a password try to login with one.";
+        
+        message = ":IRC 464 Nick :Password incorrect\r\n";
         sendMessage(message, _clientfd);
         //disconnect();
         return false;
@@ -104,7 +105,7 @@ bool Client::checkPass(std::string password, std::string input){
     if (!afterPass.empty() && afterPass[0] == ':')
         afterPass.erase(0, 1);
     if (afterPass != password){
-        message = "Wrong password.";
+        message = ":IRC 464 Nick :Password incorrect\r\n";
         sendMessage(message, _clientfd);
         //disconnect();
         return false;

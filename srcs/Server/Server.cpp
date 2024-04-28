@@ -150,6 +150,16 @@ std::vector<Client>::iterator Server::searchClient(int fd){
 	return it;
 }
 
+std::vector<Client>::iterator Server::searchClient(std::string name){
+	std::vector<Client>::iterator it;
+	for (it = _Clients.begin(); it != _Clients.end(); ++it) {
+    	if (it->getNick() == name)
+       		break;
+	}
+	return it;
+}
+
+
 std::vector<Channel>::iterator Server::searchChannel(std::string channelname){
 	std::vector<Channel>::iterator it;
 	for (it = _Channels.begin(); it != _Channels.end(); ++it) {
@@ -234,15 +244,20 @@ void	Server::channelPrep(std::string channelname, Client &client){
 }
 
 void	Server::deliveryMSG(std::vector<std::string> CMD, Client &client){
-
+	//PRIVMSG Gabriel :oh
 	std::string channelname = CMD[1];
 	//std::cout << "CHANNEL NAME: " << channelname << std::endl;
 	std::string message = ":" + client.getNick() + "!~" + client.getUser() + " PRIVMSG "\
 	+ channelname + " " + CMD[2];
 	//std::cout << "MESSAGE: " << message << std::endl;
-	std::vector<Channel>::iterator itChannel = searchChannel(channelname);
 	//std::cout << itChannel->getName() << std::endl;
+	if (channelname[0] != '#'){
+		std::vector<Client>::iterator itClient = searchClient(channelname);
+		sendMessage(message, itClient->getFD());
+		return ;
+	}
 
+	std::vector<Channel>::iterator itChannel = searchChannel(channelname);
 	for(std::vector<Client>::iterator itClient = itChannel->beginUsers(); itClient != itChannel->endUsers(); itClient++){
 		if(itClient->getFD() != client.getFD())
 			sendMessage(message, itClient->getFD());
@@ -313,7 +328,6 @@ std::vector<std::string> Server::parseCMD(std::string buffer){
 }
 
 void	Server::topicChannel(std::vector<std::string> CMD, Client &client){
-	//:Nick!User@host TOPIC #channelname :new topic\r\n
 	std::string channelName = CMD[1];
     std::vector<Channel>::iterator it = searchChannel(channelName);
 	if (CMD.size() == 2){
@@ -331,6 +345,21 @@ void	Server::topicChannel(std::vector<std::string> CMD, Client &client){
         sendMessage(msg, client.getFD());
 		return ;
 	}
-	
 
+	//:Nick!User@host TOPIC #channelname :new topic\r\n
+	std::string topic;
+	for(std::vector<std::string>::iterator itC = CMD.begin() + 2; itC != CMD.end(); itC++){
+		if (*itC != CMD[2])
+			topic += " ";
+		topic += *itC;
+	}
+
+	std::string msg = ":" + client.getNick() + "!" + client.getUser() + " TOPIC " + channelName \
+	+ " " + topic + "\r\n";
+	//std::cout << "TOPIC: " << topic << std::endl;
+
+	it->setTopic(topic.substr(1, topic.size() - 1));
+	for(std::vector<Client>::iterator itClient = it->beginUsers(); itClient != it->endUsers(); itClient++){
+		sendMessage(msg, itClient->getFD());
+	}
 }
