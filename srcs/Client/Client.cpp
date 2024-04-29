@@ -63,7 +63,6 @@ void Client::connect(std::string password){
 
     char		buffer[1024];
 	ssize_t		n = recv(_clientfd, buffer, sizeof(buffer) - 1, 0);
-    //std::cout << buffer << std::endl;
     if (n == -1)
 		throw(std::runtime_error("Error. Failed in rcv."));
 	else if (n == 0){
@@ -95,7 +94,8 @@ bool Client::checkPass(std::string password, std::string input){
     std::string message;
     size_t found = input.find("PASS");
     if (found == std::string::npos){
-        message = "Server needs a password try to login with one.";
+        
+        message = ":IRC 464 Nick :Password incorrect\r\n";
         sendMessage(message, _clientfd);
         //disconnect();
         return false;
@@ -105,7 +105,7 @@ bool Client::checkPass(std::string password, std::string input){
     if (!afterPass.empty() && afterPass[0] == ':')
         afterPass.erase(0, 1);
     if (afterPass != password){
-        message = "Wrong password.";
+        message = ":IRC 464 Nick :Password incorrect\r\n";
         sendMessage(message, _clientfd);
         //disconnect();
         return false;
@@ -153,16 +153,19 @@ bool Client::checkName(std::string input){
     return true;
 }
 
-void Client::authenticateClient(std::string password, std::string input, std::vector<Client> &Clients){
-    //std::cout << input << std::endl;
+bool Client::authenticateClient(std::string password, std::string input, std::vector<Client> &Clients){
+    if (_authenticated == true)
+        return true;
+    //std::cout << input  << std::endl;
     if(!checkPass(password, input))
-        return;
+        return false;
     if(!checkNick(input, Clients))
-        return; 
+        return false; 
     if(!checkName(input))
-        return;
-    sendMessage("You are authenticated. Welcome.", _clientfd);
+        return false;
     _authenticated = true;
+    sendMessage("You are authenticated. Welcome.", _clientfd);
+    return true;
    /*  std::cout << "_nickname: " << _nickname << std::endl;
     std::cout << "_username: " << _username << std::endl;
     std::cout << _nickname.size() << std::endl;

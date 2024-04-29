@@ -42,6 +42,8 @@ class Server {
 		fd_set	_masterfds;
 		std::vector<Client> _Clients;
 		std::vector<Channel> _Channels;
+		std::vector<std::string> parseCMD(std::string buffer);
+
 
 	public:
 		int		maxfds;
@@ -57,11 +59,14 @@ class Server {
 		void	selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes );
 		int		getSocket( void );
 		void	cmdHandler(std::string buffer, Client &client);
-		void	joinChannel(std::string buffer, Client &client);
-		void	quitServer(std::string buffer, Client &client);
-		void	deliveryMSG(std::string buffer, Client &client);
+		void	joinChannel(std::vector<std::string> CMD, Client &client);
+		void	quitServer(std::vector<std::string> CMD, Client &client);
+		void	deliveryMSG(std::vector<std::string> CMD, Client &client);
+		void	kickFromChannel(std::vector<std::string> CMD, Client &client);
+		void	topicChannel(std::vector<std::string> CMD, Client &client);
 		void	channelPrep(std::string channelname, Client &client);
 		std::vector<Client>::iterator searchClient(int fd);
+		std::vector<Client>::iterator searchClient(std::string name);
 		std::vector<Channel>::iterator searchChannel(std::string channelname);
 		void disconnectClient(std::vector<Client>::iterator it);
 
