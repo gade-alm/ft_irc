@@ -1,18 +1,13 @@
 #include "Server.hpp"
 
-#include <algorithm>
-#include <string>
-
-// #include "commands.hpp"
-
 // static void parserTest ( std::string buffer, int i );
 Server::Server(void) {}
 
-Server::Server(const Server&) {}
+Server::Server(const Server &) {}
 
 Server::~Server(void) {}
 
-Server::Server(const char* portValue, const std::string& passwordValue) {
+Server::Server(const char *portValue, const std::string &passwordValue) {
   _clientfd = 0;
   maxfds = 0;
   int used = 1;
@@ -47,7 +42,7 @@ void Server::setSocket(int socketFD) {
 }
 
 void Server::setBind(void) {
-  _bindSocket = bind(_serverSocket, (struct sockaddr*)&serverAddr,
+  _bindSocket = bind(_serverSocket, (struct sockaddr *)&serverAddr,
                      sizeof(struct sockaddr));
   if (_bindSocket == -1) {
     perror("setBind");
@@ -93,7 +88,7 @@ void Server::selectLoop(int i, struct sockaddr_in _clientaddr, int numbytes) {
   if (FD_ISSET(i, &_selectfds) != 0) {
     if (i == _serverSocket) {
       socklen_t addrSize = sizeof(_clientaddr);
-      if ((_clientfd = accept(_serverSocket, (struct sockaddr*)&_clientaddr,
+      if ((_clientfd = accept(_serverSocket, (struct sockaddr *)&_clientaddr,
                               &addrSize)) != -1) {
         FD_SET(_clientfd, &_masterfds);
         if (_clientfd > maxfds) maxfds = _clientfd;
@@ -107,39 +102,28 @@ void Server::selectLoop(int i, struct sockaddr_in _clientaddr, int numbytes) {
         close(i);
         FD_CLR(i, &_masterfds);
       } else {
+        std::string buffer(buf, numbytes);
+        // std::cout << buffer << std::endl;
         std::vector<Client>::iterator it = searchClient(i);
         if (it != _Clients.end()) {
-          Client& client = *it;
-          if (!client.getAuth())
-            client.authenticateClient(_password, buf, _Clients);
-          if (!client.getAuth()) {
+          Client &client = *it;
+          if (!client.authenticateClient(_password, buf, _Clients)) {
             disconnectClient(it);
             return;
           }
-          std::cout << buf << std::endl;
-          // is_command(buf);
+          // std::cout << "CLIENTFD: " << client.getFD() << " is Auth: " <<
+          // client.getAuth() << std::endl;
+          cmdHandler(buffer, client);
+
         } else {
           disconnectClient(it);
           return;
         }
-        std::string buffer(buf, numbytes);
-        // parserTest(buffer, i);
-        for (int j = 0; j < maxfds; j++) {
-          if (FD_ISSET(j, &_masterfds))
-            if (j != _serverSocket && j != i) sendMessage(buf, j);
-        }
-        // commandos
       }
     }
   }
+  memset(buf, 0, sizeof(buf));
 }
-
-<<<<<<< HEAD
-/* static void parserTest ( std::string buffer, int i )
-{
-        std::cout << "msg from client " << i << ": " << buffer << std::endl;
-        return ;
-} */
 
 std::vector<Client>::iterator Server::searchClient(int fd) {
   std::vector<Client>::iterator it;
@@ -149,201 +133,218 @@ std::vector<Client>::iterator Server::searchClient(int fd) {
   return it;
 }
 
-bool Server::AddChannel(std::string& name, Client& client) {
-  std::vector<Channel>::iterator it =
-      std::find(_channels.begin(), _channels.end(), name);
-  Channel ch;
-
-  if (it != _channels.end()) {
-    return false;
+std::vector<Client>::iterator Server::searchClient(std::string name) {
+  std::vector<Client>::iterator it;
+  for (it = _Clients.begin(); it != _Clients.end(); ++it) {
+    if (it->getNick() == name) break;
   }
-  ch = Channel(name);
-  _channels.push_back(ch);
-  // Adicionar o user como preveligiado
+  return it;
+}
 
-  return true;
+std::vector<Channel>::iterator Server::searchChannel(std::string channelname) {
+  std::vector<Channel>::iterator it;
+  for (it = _Channels.begin(); it != _Channels.end(); ++it) {
+    // std::cout << "ClientName: " << it->getName() << " SIZE: "<<
+    // it->getName().size() << std::endl;
+    // std::cout << "Name: " << channelname << " SIZE: "<< channelname.size() <<
+    // std::endl;
+    if (it->getName() == channelname) {
+      // std::cout << "TRUE CHANNEL" << std::endl;
+      break;
+    }
+  }
+  return it;
 }
 
 void Server::disconnectClient(std::vector<Client>::iterator it) {
-  Client& client = *it;
+  Client &client = *it;
   FD_CLR(client.getFD(), &_masterfds);
   std::string message = "You have been disconnected.";
   sendMessage(message, client.getFD());
   close(client.getFD());
   _Clients.erase(it);
-=======
-void	Server::listenSockets( void ) {
-	_listenSocket = listen(_serverSocket, BACKLOG);
-	if (_listenSocket == -1) {
-		perror("Error while opening sockets");
-		return ;
-	}
 }
 
-int		Server::getSocket( void ) {
-	return _serverSocket;
+void Server::cmdHandler(std::string buffer, Client &client) {
+  // std::cout << buffer << std::endl;
+  std::vector<std::string> CMD = parseCMD(buffer);
+  std::string cmd = buffer.substr(0, buffer.find(" "));
+  void (Server::*myCMDS[5])(std::vector<std::string>, Client &) = {
+      &Server::joinChannel, &Server::quitServer, &Server::deliveryMSG,
+      &Server::kickFromChannel, &Server::topicChannel};
+  long unsigned int index;
+  std::string cmds[5] = {"JOIN", "QUIT", "PRIVMSG", "KICK", "TOPIC"};
+
+  for (index = 0; index < sizeof(cmds) / sizeof(cmds[0]); index++) {
+    if (cmd == cmds[index]) break;
+  }
+  if (index < sizeof(cmds) / sizeof(cmds[0]))
+    (this->*myCMDS[index])(CMD, client);
 }
 
-void	Server::prepareFDs( void ) {
+void Server::joinChannel(std::vector<std::string> CMD, Client &client) {
+  std::string channelname = CMD[1];
+  if (channelname[0] != '#') channelname = "#" + channelname;
+  channelPrep(channelname, client);
+  std::string output =
+      ":" + client.getNick() + "!" + client.getUser() + " JOIN " + channelname;
+  sendMessage(output, client.getFD());
 
-	FD_ZERO(&_selectfds);
-	FD_ZERO(&_masterfds);
-
-	FD_SET(_serverSocket, &_masterfds);
-	maxfds = _serverSocket;
+  std::string message = ":" + client.getNick() + "!" + client.getUser() +
+                        " JOIN " + channelname + "\r\n";
+  std::vector<Channel>::iterator itChannel = searchChannel(channelname);
+  for (std::vector<Client>::iterator itClient = itChannel->beginUsers();
+       itClient != itChannel->endUsers(); itClient++) {
+    if (itClient->getFD() != client.getFD())
+      sendMessage(message, itClient->getFD());
+  }
+  /* 	std::vector<Channel>::iterator itChannel = searchChannel(channelname);
+          itChannel->printUsers(); */
 }
 
-void	Server::selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes ) {
-
-	_selectfds = _masterfds;
-	if (select(maxfds + 1, &_selectfds, NULL, NULL, NULL) == -1) {
-		//perror ("select error");
-		return ;
-	}
-	if ( FD_ISSET( i , &_selectfds ) != 0 ) 
-	{
-		if ( i == _serverSocket )
-		{
-			socklen_t addrSize = sizeof(_clientaddr);
-			if ((_clientfd = accept(_serverSocket, (struct sockaddr *)&_clientaddr, &addrSize)) != -1)
-			{
-				FD_SET(_clientfd, &_masterfds);
-				if (_clientfd > maxfds)
-					maxfds = _clientfd;
-				Client client(_clientfd);
-				_Clients.push_back(client);
-			}
-			else
-				perror ("accept error");
-		}
-		else {
-			if ((numbytes = recv(i, buf, sizeof(buf), 0)) < 1)
-			{
-				perror("recv error");
-				close (i);
-				FD_CLR(i, &_masterfds);
-			}
-			else
-			{
-				std::string buffer(buf, numbytes);
-				std::vector<Client>::iterator it = searchClient(i);
-				if (it != _Clients.end()) {
-					Client& client = *it;
-					if(!client.getAuth())
-						client.authenticateClient(_password, buf, _Clients);
-					if(!client.getAuth()){
-						disconnectClient(it);
-						return;
-					}
-					cmdHandler(buffer, client);
-					
-				} else {
-					disconnectClient(it);
-					return;
-				}
-			}
-
-		}
-	}
+void Server::quitServer(std::vector<std::string> CMD, Client &client) {
+  (void)CMD;
+  std::vector<Client>::iterator it = searchClient(client.getFD());
+  // Missing Channels disconnect.
+  disconnectClient(it);
 }
 
-std::vector<Client>::iterator Server::searchClient(int fd){
-	std::vector<Client>::iterator it;
-	for (it = _Clients.begin(); it != _Clients.end(); ++it) {
-    	if (it->getFD() == fd)
-       		break;
-	}
-	return it;
+void Server::channelPrep(std::string channelname, Client &client) {
+  std::vector<Channel>::iterator itChannel = searchChannel(channelname);
+  if (itChannel != _Channels.end()) {
+    if (itChannel->searchClient(client.getFD()) == itChannel->endUsers())
+      itChannel->addUser(client);
+    return;
+  }
+  Channel channel(channelname);
+  channel.addUser(client);
+  std::vector<Client>::iterator itClient = channel.searchClient(client.getFD());
+  itClient->setOp(true);
+  _Channels.push_back(channel);
+
+  itChannel = searchChannel(channelname);
+  // itChannel->printUsers();
 }
 
-std::vector<Channel>::iterator Server::searchChannel(std::string channelname){
-	std::vector<Channel>::iterator it;
-	for (it = _Channels.begin(); it != _Channels.end(); ++it) {
-    	if (it->getName() == channelname)
-       		break;
-	}
-	return it;
+void Server::deliveryMSG(std::vector<std::string> CMD, Client &client) {
+  // PRIVMSG Gabriel :oh
+  std::string channelname = CMD[1];
+  // std::cout << "CHANNEL NAME: " << channelname << std::endl;
+  std::string message = ":" + client.getNick() + "!~" + client.getUser() +
+                        " PRIVMSG " + channelname + " " + CMD[2];
+  // std::cout << "MESSAGE: " << message << std::endl;
+  // std::cout << itChannel->getName() << std::endl;
+  if (channelname[0] != '#') {
+    std::vector<Client>::iterator itClient = searchClient(channelname);
+    sendMessage(message, itClient->getFD());
+    return;
+  }
+
+  std::vector<Channel>::iterator itChannel = searchChannel(channelname);
+  for (std::vector<Client>::iterator itClient = itChannel->beginUsers();
+       itClient != itChannel->endUsers(); itClient++) {
+    if (itClient->getFD() != client.getFD())
+      sendMessage(message, itClient->getFD());
+  }
 }
 
-void Server::disconnectClient(std::vector<Client>::iterator it){
-	Client& client = *it;
-	FD_CLR(client.getFD(), &_masterfds);
-	std::string message = "You have been disconnected.";
-    sendMessage(message, client.getFD());
-    close(client.getFD());
-	_Clients.erase(it);
+std::string prepReason(std::vector<std::string> CMD) {
+  std::string reason;
+  for (std::vector<std::string>::iterator it = CMD.begin() + 3; it != CMD.end();
+       it++) {
+    if (*it != CMD[3]) reason += " ";
+    reason += *it;
+  }
+  return reason;
 }
 
-
-void Server::cmdHandler(std::string buffer, Client &client){
-	//std::cout << buffer << std::endl;
-	std::string cmd = buffer.substr(0, buffer.find(" "));
-	void (Server::*myCMDS[3])(std::string, Client&) = {&Server::joinChannel, &Server::quitServer \
-	, &Server::deliveryMSG};
-	long unsigned int index;
-	std::string cmds[3] = {"JOIN", "QUIT", "PRIVMSG"};
-
-	for (index = 0; index < sizeof(cmds)/sizeof(cmds[0]); index++){
-		if (cmd == cmds[index])
-			break;
-	}
-	if (index < sizeof(cmds)/sizeof(cmds[0]))
-		(this->*myCMDS[index])(buffer, client);
+void Server::kickFromChannel(std::vector<std::string> CMD, Client &client) {
+  // KICK #channelname username reason
+  // :server_name KICK #channelname username :reason
+  std::string channelname = CMD[1];
+  std::string nick = CMD[2];
+  std::string reason = (CMD.size() >= 4) ? prepReason(CMD) : "";
+  std::vector<Channel>::iterator it = searchChannel(channelname);
+  if (it == _Channels.end()) return;
+  if (!it->searchClient(client.getNick())->isOP()) {
+    sendMessage("You dont have the rights to kick Users.", client.getFD());
+    return;
+  }
+  if (it->searchClient(nick) == it->endUsers()) {
+    sendMessage("User not found.", client.getFD());
+    return;
+  }
+  std::string cmd = ":" + client.getNick() + "!" + client.getUser() + " KICK " +
+                    channelname + " " + nick +
+                    ((reason.empty()) ? "" : (" " + reason)) + "\r\n";
+  for (std::vector<Client>::iterator itClient = it->beginUsers();
+       itClient != it->endUsers(); itClient++) {
+    sendMessage(cmd, itClient->getFD());
+  }
+  it->rmUser(*it->searchClient(nick));
+  return;
 }
 
-void Server::joinChannel(std::string buffer, Client &client){
-    std::string channelname = buffer.substr(buffer.find("#"), (buffer.find("\r") - buffer.find("#")));
-    if (channelname[0] != '#') 
-   		channelname = "#" + channelname;
-	channelPrep(channelname, client);
-	std::string output = ":" + client.getNick() + "!" + client.getUser() + " JOIN " + channelname;
-	sendMessage(output, client.getFD());
+std::vector<std::string> Server::parseCMD(std::string buffer) {
+  size_t start = 0;
+  size_t end;
+  std::string word;
+
+  std::vector<std::string> CMD;
+  // std::cout << "ENTROU" << std::endl;
+  while (end != buffer.size() - 2) {
+    end = buffer.find(" ", start);
+    if (end == std::string::npos) {
+      end = buffer.find("\r", start);
+      word = buffer.substr(start, end - start);
+      CMD.push_back(word);
+      // std::cout << "WORD: " << word << " SIZE " << word.size() << std::endl;
+      break;
+    }
+    word = buffer.substr(start, end - start);
+    CMD.push_back(word);
+    // std::cout << "WORD: " << word << " SIZE " << word.size() << std::endl;
+    start = end + 1;
+  }
+  return CMD;
 }
 
-void Server::quitServer(std::string buffer, Client &client){
-	(void)buffer;
-	std::vector<Client>::iterator it = searchClient(client.getFD());
-	//Missing Channels disconnect.
-	disconnectClient(it);
-}
+void Server::topicChannel(std::vector<std::string> CMD, Client &client) {
+  std::string channelName = CMD[1];
+  std::vector<Channel>::iterator it = searchChannel(channelName);
+  if (CMD.size() == 2) {
+    if (it != _Channels.end()) {
+      std::string topic = it->getTopic();
+      std::string msg = ((!topic.empty()) ? ":IRC 332 " : ":IRC 331 ") +
+                        client.getNick() + " " + channelName + " :" +
+                        ((!topic.empty()) ? topic : "No topic is set") + "\r\n";
+      sendMessage(msg, client.getFD());
+    }
+    return;
+  }
 
-void	Server::channelPrep(std::string channelname, Client &client){
-	
-	std::vector<Channel>::iterator itChannel = searchChannel(channelname);
-	if (itChannel != _Channels.end()){
-		if (itChannel->searchClient(client.getFD()) == itChannel->endUsers())
-			itChannel->addUser(client);
-		//itChannel->printUsers();
-		return ;
-	}
-	Channel channel(channelname);
-	channel.addUser(client);
-	std::vector<Client>::iterator itClient = channel.searchClient(client.getFD());
-	itClient->setOp(true);
-	_Channels.push_back(channel);
-	
-	itChannel = searchChannel(channelname);
-	//itChannel->printUsers();
-}
+  if (it->getTopicMode() && !it->searchClient(client.getFD())->isOP()) {
+    std::string msg = ":IRC 482 " + client.getNick() + " " + channelName +
+                      " :You're not channel operator\r\n";
+    sendMessage(msg, client.getFD());
+    return;
+  }
 
-void	Server::deliveryMSG(std::string buffer, Client &client){
-	size_t start = buffer.find("#");
-	size_t end = buffer.find(" ", start);
+  //: Nick!User@host TOPIC #channelname :new topic\r\n
+  std::string topic;
+  for (std::vector<std::string>::iterator itC = CMD.begin() + 2;
+       itC != CMD.end(); itC++) {
+    if (*itC != CMD[2]) topic += " ";
+    topic += *itC;
+  }
 
-	std::string channelname = buffer.substr(start, (end - start));
-	//std::cout << "CHANNEL NAME: " << channelname << std::endl;
-	start = buffer.find(":", end + 1);
-	std::string message = ":" + client.getNick() + "!~" + client.getUser() + " PRIVMSG "\
-	+ channelname + " " + buffer.substr(start);
-	//std::cout << "MESSAGE: " << message << std::endl;
-	std::vector<Channel>::iterator itChannel = searchChannel(channelname);
-	//std::cout << itChannel->getName() << std::endl;
+  std::string msg = ":" + client.getNick() + "!" + client.getUser() +
+                    " TOPIC " + channelName + " " + topic + "\r\n";
+  // std::cout << "TOPIC: " << topic << std::endl;
 
-	for(std::vector<Client>::iterator itClient = itChannel->beginUsers(); itClient != itChannel->endUsers(); itClient++){
-		if(itClient->getFD() != client.getFD())
-			sendMessage(message, itClient->getFD());
-	}
-	//std::string channelname = buffer.substr(buffer.find(" ", ));
-	//PRIVMSG #A :fala jamal
->>>>>>> origin/hcoutinh
+  it->setTopic(topic.substr(1, topic.size() - 1));
+  for (std::vector<Client>::iterator itClient = it->beginUsers();
+       itClient != it->endUsers(); itClient++) {
+    sendMessage(msg, itClient->getFD());
+  }
 }

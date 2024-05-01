@@ -2,8 +2,6 @@
 #define CHANNEL_HPP
 
 #include <algorithm>
-#include <string>
-#include <utility>
 #include <vector>
 
 #include "Client.hpp"
@@ -24,36 +22,39 @@ class Channel {
   Channel(std::string name);
   ~Channel();
   Channel(const Channel& copy);
+  Channel& operator=(const Channel& copy);
 
   void setName(std::string name);
   const std::string getName() const;
 
   void setPassword(std::string password);
   const std::string getPassword() const;
-  const std::vector<Client>& getUserOn() const;
-  void addUser(Client& client);
-  void rmUser(Client& client);
 
   void setTopic(std::string topic);
   const std::string getTopic() const;
 
-  void addOP(Client client);
-  void rmOP(Client client);
+  void setTopicMode(bool topic);
+  bool getTopicMode() const;
+
+  const std::vector<Client>& getUserOn() const;
+  void addUser(Client& client);
+  void rmUser(Client& client);
 
   void setInvMode(bool mode);
-  const bool getInvMode() const;
+  bool getInvMode() const;
 
+  void setLimit(long limit);
+  long getLimit() const;
+
+  void setLimitMode(bool mode);
+  bool getLimitMode() const;
   std::vector<Client>::iterator endUsers();
   std::vector<Client>::iterator beginUsers();
 
   std::vector<Client>::iterator searchClient(int fd);
+  std::vector<Client>::iterator searchClient(std::string name);
 
   void printUsers();
-
-  void setLimit(long limit);
-  const long getLimit() const;
-
-  void setLimitMode(bool mode);
-  const bool getLimitMode() const;
 };
+
 #endif

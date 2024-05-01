@@ -1,23 +1,18 @@
 #include "Channel.hpp"
 
-#include <algorithm>
-#include <string>
-#include <utility>
-
 Channel::Channel() : _name(""), _password("") {}
 
-Channel::Channel(std::string name, std::string password)
-    : _name(name), _password(password) {}
-
-Channel::Channel(std::string name) : _name(name), _password("") {}
+Channel::Channel(std::string name) : _name(name) {}
 
 Channel::~Channel() {}
 
-Channel::Channel(const Channel&) {}
+Channel::Channel(const Channel& copy) { *this = copy; }
 
-Channel& Channel::operator=(const Channel&) { return *this; }
-
-bool Channel::operator==(Channel const& value) { return value._name == _name; }
+Channel& Channel::operator=(const Channel& copy) {
+  _name = copy._name;
+  _Users = copy._Users;
+  return *this;
+}
 
 void Channel::setName(std::string name) { _name = name; }
 
@@ -33,139 +28,60 @@ const std::string Channel::getTopic() const { return _topic; }
 
 void Channel::setInvMode(bool mode) { _inviteonly = mode; }
 
-const bool Channel::getInvMode() const { return _inviteonly; }
+bool Channel::getInvMode() const { return _inviteonly; }
 
-void Channel::setLimit(long limit) { _limit = _userlimit; }
+void Channel::setLimit(long limit) { _limit = limit; }
 
-const long Channel::getLimit() const { return _userlimit; }
+long Channel::getLimit() const { return _userlimit; }
 
 void Channel::setLimitMode(bool mode) { _limit = mode; }
 
-const bool Channel::getInvMode() const { return _limit; }
+const std::vector<Client>& Channel::getUserOn() const { return _Users; }
 
-const std::vector<std::pair<std::string, bool> >& Channel::getUserOn() const {
-  return _users;
-}
+void Channel::addUser(Client& client) { _Users.push_back(client); }
 
-<<<<<<< HEAD
-void Channel::addUser(Client client, bool isOp) {
-  if (std::find(_users.begin(), _users.end(), client.getUser()) == _users.end())
-    _users.push_back(std::make_pair(client.getUser(), isOp));
-=======
-Channel::Channel(std::string name) : _name(name){
->>>>>>> origin/hcoutinh
-}
-
-void Channel::rmUser(Client client) {
+void Channel::rmUser(Client& client) {
   std::vector<Client>::iterator it = find(_Users.begin(), _Users.end(), client);
-  if (it != _Users.end()) _Users.erase(it);
+  if (it == _Users.end()) return;
+  _Users.erase(it);
 }
 
-<<<<<<< HEAD
-const std::vector<Client>& Channel::getOPsOn() const { return _OPs; }
+void Channel::setTopicMode(bool topic) { _topicneedop = topic; }
 
-void Channel::addOP(Client client) {
-  _Users.push_back(client.getUser());
-  client.setOp(true);
+bool Channel::getTopicMode() const { return _topicneedop; }
+
+std::vector<Client>::iterator Channel::searchClient(int fd) {
+  std::vector<Client>::iterator it;
+  for (it = _Users.begin(); it != _Users.end(); ++it) {
+    if (it->getFD() == fd) break;
+  }
+  return it;
 }
 
-void Channel::rmUser(Client client) {
-  std::vector<Client>::iterator it = find(_users.begin(), _users.end(), client);
-  if (it != _users.end()) _users.erase(it);
-  client.setOp(false);
-}
-=======
-Channel::Channel( const Channel& copy){
-    *this = copy;
-}
-
-Channel& Channel::operator=( const Channel & copy){
-    _name = copy._name;
-    _Users = copy._Users;
-    return *this;
-}
-
-void Channel::setName(std::string name){
-    _name = name;
-}
-
-const std::string Channel::getName() const {
-    return _name;
-}
-
-void Channel::setPassword(std::string password){
-    _password = password;
-}
-
-const std::string Channel::getPassword() const {
-    return _password;
-}
-
-void Channel::setTopic(std::string topic){
-    _topic = topic;
-}
-
-const std::string Channel::getTopic() const {
-    return _topic;
-}
-
-
-void Channel::setInvMode(bool mode){
-    _inviteonly = mode;
-}
-
-bool Channel::getInvMode() const {
-    return _inviteonly;
-}
-
-void Channel::setLimit(long limit){
-    _limit = limit;
-}
-
-long Channel::getLimit() const {
-    return _userlimit;
-}
-
-void Channel::setLimitMode(bool mode){
-    _limit = mode;
-}
-
-const std::vector<Client>& Channel::getUserOn() const {
-    return _Users;
-}
-
-void Channel::addUser(Client &client){
-    _Users.push_back(client);
-}
-
-void Channel::rmUser(Client &client){
-    std::vector<Client>::iterator it = find(_Users.begin(), _Users.end(), client);
-    if (it != _Users.end())
-        _Users.erase(it);
-}
-
-std::vector<Client>::iterator Channel::searchClient(int fd){
-	std::vector<Client>::iterator it;
-	for (it = _Users.begin(); it != _Users.end(); ++it) {
-    	if (it->getFD() == fd)
-       		break;
-	}
-	return it;
-}
-
-std::vector<Client>::iterator Channel::endUsers(){
-    return _Users.end();
-}
-
-std::vector<Client>::iterator Channel::beginUsers(){
-    return _Users.begin();
-}
-
-void Channel::printUsers(){
-    //std::cout << "CHEGOU" << std::endl;
-    for(std::vector<Client>::iterator it = _Users.begin(); it != _Users.end(); it++){
-        std::cout << "Client: " << it->getNick() << std::endl;
-        std::cout << "Is OP? " << it->isOP() << std::endl; 
+std::vector<Client>::iterator Channel::searchClient(std::string name) {
+  // std::cout << "ClientName: " << it->getNick() << " SIZE: "<<
+  // it->getNick().size() << std::endl; std::cout << "Name: " << name << " SIZE:
+  // "<< name.size() << std::endl;
+  std::vector<Client>::iterator it;
+  for (it = _Users.begin(); it != _Users.end(); ++it) {
+    if (it->getNick() == name) {
+      // std::cout << "True" << std::endl;
+      break;
     }
+  }
+  return it;
 }
->>>>>>> origin/hcoutinh
+
+std::vector<Client>::iterator Channel::endUsers() { return _Users.end(); }
+
+std::vector<Client>::iterator Channel::beginUsers() { return _Users.begin(); }
+
+void Channel::printUsers() {
+  // std::cout << "CHEGOU" << std::endl;
+  for (std::vector<Client>::iterator it = _Users.begin(); it != _Users.end();
+       it++) {
+    std::cout << "Client: " << it->getNick()
+              << " SIZE: " << it->getNick().size() << std::endl;
+    std::cout << "Is OP? " << it->isOP() << std::endl;
+  }
+}
