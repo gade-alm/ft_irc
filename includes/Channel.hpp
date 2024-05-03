@@ -48,11 +48,14 @@ class Channel {
 
   void setLimitMode(bool mode);
   bool getLimitMode() const;
+
   std::vector<Client>::iterator endUsers();
   std::vector<Client>::iterator beginUsers();
 
   std::vector<Client>::iterator searchClient(int fd);
   std::vector<Client>::iterator searchClient(std::string name);
+
+  std::vector<int> _invitation;
 
   void printUsers();
 };

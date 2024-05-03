@@ -171,11 +171,14 @@ void Server::cmdHandler(std::string buffer, Client &client) {
   std::cout << buffer << std::endl;
   std::vector<std::string> CMD = parseCMD(buffer);
   std::string cmd = buffer.substr(0, buffer.find(" "));
-  void (Server::*myCMDS[6])(std::vector<std::string>, Client &) = {
-      &Server::joinChannel,     &Server::quitServer,   &Server::deliveryMSG,
-      &Server::kickFromChannel, &Server::topicChannel, &Server::invite};
+  void (Server::*myCMDS[7])(std::vector<std::string>, Client &) = {
+      &Server::joinChannel,  &Server::quitServer,
+      &Server::deliveryMSG,  &Server::kickFromChannel,
+      &Server::topicChannel, &Server::invite,
+      &Server::mode};
   long unsigned int index;
-  std::string cmds[6] = {"JOIN", "QUIT", "PRIVMSG", "KICK", "TOPIC", "INVITE"};
+  std::string cmds[7] = {"JOIN",  "QUIT",   "PRIVMSG", "KICK",
+                         "TOPIC", "INVITE", "MODE"};
 
   for (index = 0; index < sizeof(cmds) / sizeof(cmds[0]); index++) {
     if (cmd == cmds[index]) break;
@@ -187,7 +190,10 @@ void Server::cmdHandler(std::string buffer, Client &client) {
 void Server::joinChannel(std::vector<std::string> CMD, Client &client) {
   std::string channelname = CMD[1];
   if (channelname[0] != '#') channelname = "#" + channelname;
-  channelPrep(channelname, client);
+  if (!channelPrep(channelname, client)) {
+    // Mensagem de erro
+    return;
+  };
   std::string output =
       ":" + client.getNick() + "!" + client.getUser() + " JOIN " + channelname;
   sendMessage(output, client.getFD());
@@ -211,12 +217,19 @@ void Server::quitServer(std::vector<std::string> CMD, Client &client) {
   disconnectClient(it);
 }
 
-void Server::channelPrep(std::string channelname, Client &client) {
+bool Server::channelPrep(std::string channelname, Client &client) {
   std::vector<Channel>::iterator itChannel = searchChannel(channelname);
+
   if (itChannel != _Channels.end()) {
+    // Caso esteja em Invite Mode e sem invitation retornar logo.
+    if (itChannel->getInvMode() &&
+        std::find(itChannel->_invitation.begin(), itChannel->_invitation.end(),
+                  client.getFD()) == itChannel->_invitation.end()) {
+      return false;
+    }
     if (itChannel->searchClient(client.getFD()) == itChannel->endUsers())
       itChannel->addUser(client);
-    return;
+    return true;
   }
   Channel channel(channelname);
   channel.addUser(client);
@@ -226,13 +239,14 @@ void Server::channelPrep(std::string channelname, Client &client) {
 
   itChannel = searchChannel(channelname);
   // itChannel->printUsers();
+  return true;
 }
 
 std::string prepReason(std::vector<std::string> CMD, int i) {
   std::string reason;
-  for (std::vector<std::string>::iterator it = CMD.begin() + 3; it != CMD.end();
+  for (std::vector<std::string>::iterator it = CMD.begin() + i; it != CMD.end();
        it++) {
-    if (*it != CMD[i]) reason += " ";
+    if (it + 1 != CMD.end()) reason += ' ';
     reason += *it;
   }
   return reason;
@@ -357,6 +371,7 @@ void Server::invite(std::vector<std::string> CMD, Client &client) {
   std::vector<Client>::iterator destiny = searchClient(CMD[1]);
   std::vector<Channel>::iterator channel = searchChannel(CMD[2]);
   std::vector<Client>::iterator original;
+  int fd;
   std::string msg;
 
   if (channel == _Channels.end()) {
@@ -369,7 +384,75 @@ void Server::invite(std::vector<std::string> CMD, Client &client) {
                       channel->getName() + " :You're not channel operator\r\n";
     return;
   }
+  fd = destiny->getFD();
+  channel->_invitation.push_back(client.getFD());
   msg = ':' + client.getNick() + '!' + client.getUser() + "@127.0.0.1 " +
-        CMD[0] + " " + CMD[1] + " " + " " + CMD[2] + "\r\n";
+        CMD[0] + " " + CMD[1] + " " + CMD[2] + "\r\n";
   sendMessage(msg, destiny->getFD());
+}
+
+/*********************************************
+ * Mode function has 5 flags                 *
+ *  i  Sets invite only channel flag         *
+ *  t Change or view Topics                  *
+ *  k Set / Removes the channel key          *
+ *  o Give / Take channel operator privilege *
+ *  l Set / Romove the user limit to channel *
+ *                                           *
+ * To kknow if a flag is used must have a    *
+ * + or - sign in a flag                     *
+ ********************************************/
+void Server::mode(std::vector<std::string> CMD, Client &client) {
+  char cmds[5] = {'i', 't', 'k', 'o', 'l'};
+  void (Server::*myCMDS[5])(std::vector<std::string>, Client &,
+                            bool) = {&Server::inviteOnly};
+
+  // Com dois argumentos printar as permissoes
+  // Com mais setar permissoes
+  // Caso haja um k vai haver mais um argumento que vai ser a password
+}
+
+void Server::inviteOnly(std::vector<std::string> CMD, Client &client,
+                        bool plus) {
+  std::string channel = CMD[1];
+  std::vector<Channel>::iterator itChannel = searchChannel(channel);
+  bool mode;
+
+  if (itChannel == _Channels.end()) return;
+  plus ? mode = true : mode = false;
+  itChannel->setInvMode(mode);
+}
+
+void Server::topicFlag(std::vector<std::string> CMD, Client &client,
+                       bool plus) {
+  std::string channel = CMD[1];
+  std::vector<Channel>::iterator itChannel = searchChannel(channel);
+  bool mode;
+
+  if (itChannel == _Channels.end()) return;
+  plus ? mode = true : mode = false;
+  itChannel->setTopicMode(mode);
+}
+
+void Server::operatorFlag(std::vector<std::string> CMD, Client &client,
+                          bool plus) {
+  std::string channel = CMD[1];
+  std::vector<Channel>::iterator itChannel = searchChannel(channel);
+  std::vector<Client>::iterator itClient = searchClient(client.getFD());
+  bool mode;
+
+  if (itChannel == _Channels.end()) return;
+  plus ? mode = true : mode = false;
+  itClient->setOp(mode);
+}
+
+void Server::userLimitFlag(std::vector<std::string> CMD, Client &client,
+                           bool plus) {
+  std::string channel = CMD[1];
+  std::vector<Channel>::iterator itChannel = searchChannel(channel);
+  bool mode;
+
+  if (itChannel == _Channels.end()) return;
+  plus ? mode = true : mode = false;
+  itChannel->setLimitMode(mode);
 }

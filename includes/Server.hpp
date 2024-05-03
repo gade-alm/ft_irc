@@ -64,12 +64,17 @@ class Server {
   void deliveryMSG(std::vector<std::string> CMD, Client &client);
   void kickFromChannel(std::vector<std::string> CMD, Client &client);
   void topicChannel(std::vector<std::string> CMD, Client &client);
-  void channelPrep(std::string channelname, Client &client);
+  bool channelPrep(std::string channelname, Client &client);
   std::vector<Client>::iterator searchClient(int fd);
   std::vector<Client>::iterator searchClient(std::string name);
   std::vector<Channel>::iterator searchChannel(std::string channelname);
   void disconnectClient(std::vector<Client>::iterator it);
   void invite(std::vector<std::string> CMD, Client &client);
+  void mode(std::vector<std::string> CMD, Client &client);
+  void inviteOnly(std::vector<std::string> CMD, Client &client, bool plus);
+  void topicFlag(std::vector<std::string> CMD, Client &client, bool plus);
+  void operatorFlag(std::vector<std::string> CMD, Client &client, bool plus);
+  void userLimitFlag(std::vector<std::string> CMD, Client &client, bool plus);
 
   ~Server();
 };
