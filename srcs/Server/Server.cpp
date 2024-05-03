@@ -228,12 +228,23 @@ void Server::channelPrep(std::string channelname, Client &client) {
   // itChannel->printUsers();
 }
 
+std::string prepReason(std::vector<std::string> CMD, int i) {
+  std::string reason;
+  for (std::vector<std::string>::iterator it = CMD.begin() + 3; it != CMD.end();
+       it++) {
+    if (*it != CMD[i]) reason += " ";
+    reason += *it;
+  }
+  return reason;
+}
+
 void Server::deliveryMSG(std::vector<std::string> CMD, Client &client) {
   // PRIVMSG Gabriel :oh
   std::string channelname = CMD[1];
+  std::string msg = prepReason(CMD, 2);
   // std::cout << "CHANNEL NAME: " << channelname << std::endl;
   std::string message = ":" + client.getNick() + "!~" + client.getUser() +
-                        " PRIVMSG " + channelname + " " + CMD[2];
+                        " PRIVMSG " + channelname + " " + msg;
   // std::cout << "MESSAGE: " << message << std::endl;
   // std::cout << itChannel->getName() << std::endl;
   if (channelname[0] != '#') {
@@ -250,22 +261,12 @@ void Server::deliveryMSG(std::vector<std::string> CMD, Client &client) {
   }
 }
 
-std::string prepReason(std::vector<std::string> CMD) {
-  std::string reason;
-  for (std::vector<std::string>::iterator it = CMD.begin() + 3; it != CMD.end();
-       it++) {
-    if (*it != CMD[3]) reason += " ";
-    reason += *it;
-  }
-  return reason;
-}
-
 void Server::kickFromChannel(std::vector<std::string> CMD, Client &client) {
   // KICK #channelname username reason
   // :server_name KICK #channelname username :reason
   std::string channelname = CMD[1];
   std::string nick = CMD[2];
-  std::string reason = (CMD.size() >= 4) ? prepReason(CMD) : "";
+  std::string reason = (CMD.size() >= 4) ? prepReason(CMD, 3) : "";
   std::vector<Channel>::iterator it = searchChannel(channelname);
   if (it == _Channels.end()) return;
   if (!it->searchClient(client.getNick())->isOP()) {
