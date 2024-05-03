@@ -1,5 +1,7 @@
 #include "Server.hpp"
 
+#include <algorithm>
+
 // static void parserTest ( std::string buffer, int i );
 Server::Server(void) {}
 
@@ -166,14 +168,14 @@ void Server::disconnectClient(std::vector<Client>::iterator it) {
 }
 
 void Server::cmdHandler(std::string buffer, Client &client) {
-  // std::cout << buffer << std::endl;
+  std::cout << buffer << std::endl;
   std::vector<std::string> CMD = parseCMD(buffer);
   std::string cmd = buffer.substr(0, buffer.find(" "));
-  void (Server::*myCMDS[5])(std::vector<std::string>, Client &) = {
-      &Server::joinChannel, &Server::quitServer, &Server::deliveryMSG,
-      &Server::kickFromChannel, &Server::topicChannel};
+  void (Server::*myCMDS[6])(std::vector<std::string>, Client &) = {
+      &Server::joinChannel,     &Server::quitServer,   &Server::deliveryMSG,
+      &Server::kickFromChannel, &Server::topicChannel, &Server::invite};
   long unsigned int index;
-  std::string cmds[5] = {"JOIN", "QUIT", "PRIVMSG", "KICK", "TOPIC"};
+  std::string cmds[6] = {"JOIN", "QUIT", "PRIVMSG", "KICK", "TOPIC", "INVITE"};
 
   for (index = 0; index < sizeof(cmds) / sizeof(cmds[0]); index++) {
     if (cmd == cmds[index]) break;
@@ -347,4 +349,26 @@ void Server::topicChannel(std::vector<std::string> CMD, Client &client) {
        itClient != it->endUsers(); itClient++) {
     sendMessage(msg, itClient->getFD());
   }
+}
+
+// Invite Function
+void Server::invite(std::vector<std::string> CMD, Client &client) {
+  std::vector<Client>::iterator destiny = searchClient(CMD[1]);
+  std::vector<Channel>::iterator channel = searchChannel(CMD[2]);
+  std::vector<Client>::iterator original;
+  std::string msg;
+
+  if (channel == _Channels.end()) {
+    // Mensagem de erro
+    return;
+  }
+  original = std::find(channel->beginUsers(), channel->endUsers(), client);
+  if (destiny == _Clients.end() && original->isOP()) {
+    std::string msg = ":IRC 482 " + client.getNick() + " " +
+                      channel->getName() + " :You're not channel operator\r\n";
+    return;
+  }
+  msg = ':' + client.getNick() + '!' + client.getUser() + "@127.0.0.1 " +
+        CMD[0] + " " + CMD[1] + " " + " " + CMD[2] + "\r\n";
+  sendMessage(msg, destiny->getFD());
 }

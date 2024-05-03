@@ -23,7 +23,6 @@
 #define MAXPORT 65535
 #define BACKLOG 10
 #define IP "127.0.0.1"
-#define BOSS "SOU MAQUINA"
 #define PROTOCOL 0
 #define MAXUSERS 24
 
@@ -70,6 +69,7 @@ class Server {
   std::vector<Client>::iterator searchClient(std::string name);
   std::vector<Channel>::iterator searchChannel(std::string channelname);
   void disconnectClient(std::vector<Client>::iterator it);
+  void invite(std::vector<std::string> CMD, Client &client);
 
   ~Server();
 };
