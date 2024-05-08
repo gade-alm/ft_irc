@@ -86,60 +86,63 @@ void	Server::prepareFDs( void ) {
 	maxfds = _serverSocket;
 }
 
-void	Server::selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes ) {
+void	Server::selectLoop( struct sockaddr_in _clientaddr ) {
 
 	_selectfds = _masterfds;
 	if (select(maxfds + 1, &_selectfds, NULL, NULL, NULL) == -1) {
 		//perror ("select error");
 		return ;
 	}
-	if ( FD_ISSET( i , &_selectfds ) != 0 ) 
-	{
-		if ( i == _serverSocket )
+	for (int i = 0; i <= maxfds; i++){
+		if (FD_ISSET( i , &_selectfds )) 
 		{
-			socklen_t addrSize = sizeof(_clientaddr);
-			if ((_clientfd = accept(_serverSocket, (struct sockaddr *)&_clientaddr, &addrSize)) != -1)
+			if ( i == _serverSocket )
 			{
-				FD_SET(_clientfd, &_masterfds);
-				if (_clientfd > maxfds)
-					maxfds = _clientfd;
-				Client client(_clientfd);
-				_Clients.push_back(client);
+				socklen_t addrSize = sizeof(_clientaddr);
+				if ((_clientfd = accept(_serverSocket, (struct sockaddr *)&_clientaddr, &addrSize)) != -1)
+				{
+					FD_SET(_clientfd, &_masterfds);
+					if (_clientfd > maxfds)
+						maxfds = _clientfd;
+					Client client(_clientfd);
+					_Clients.push_back(client);
+				}
+				else
+					perror ("accept error");
 			}
-			else
-				perror ("accept error");
-		}
-		else {
-			std::string buffer;
-			while ((numbytes = recv(i, buf, sizeof(buf), 0)) > 0)
-				buffer.append(buf, numbytes);
-			if (numbytes < 1)
-			{
-				perror("recv error");
-				close (i);
-				FD_CLR(i, &_masterfds);
-			}
-			else if (buffer.find("\n") != std::string::npos)
-			{
-				std::vector<Client>::iterator it = searchClient(i);
-				if (it != _Clients.end()) {
-					Client& client = *it;
-					if(!client.authenticateClient(_password, buf, _Clients)){
-						disconnectClient(it);
-						return;
+			else {
+				int numbytes;
+				char test[1024];
+				std::string buffer;
+				while((numbytes = recv(i, test, sizeof(test) , MSG_DONTWAIT)) > 0)
+					buffer.append(test, numbytes);
+				std::cout << buffer << std::endl;
+				for (int j = 0; j <= maxfds + 1; j++) {
+					if (FD_ISSET(j, &_masterfds)){
+						
+							std::cout << " TESTE " << std::endl;
+							std::vector<Client>::iterator it = searchClient(j + 1);
+							if (it != _Clients.end()) {
+								Client& client = *it;
+								if(!client.authenticateClient(_password, buffer, _Clients)){
+									disconnectClient(it);
+									return;
+								}
+								// std::cout << "CLIENTFD: " << client.getFD() << " is Auth: " << client.getAuth() << std::endl;
+								cmdHandler(buffer, client);
+								
+							
+							// else 
+							// {
+							// 	disconnectClient(it);
+							// 	return;
+							// }
+						}
 					}
-					//std::cout << "CLIENTFD: " << client.getFD() << " is Auth: " << client.getAuth() << std::endl;
-					cmdHandler(buffer, client);
-					
-				} else {
-					disconnectClient(it);
-					return;
 				}
 			}
-
 		}
 	}
-	memset(buf, 0, sizeof(buf));
 }
 
 std::vector<Client>::iterator Server::searchClient(int fd){

@@ -56,7 +56,7 @@ class Server {
 		void	initAddr ( void );
 		void	listenSockets( void );
 		void	prepareFDs( void );
-		void	selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes );
+		void	selectLoop( struct sockaddr_in _clientaddr );
 		int		getSocket( void );
 		void	cmdHandler(std::string buffer, Client &client);
 		void	joinChannel(std::vector<std::string> CMD, Client &client);
