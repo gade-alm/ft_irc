@@ -123,12 +123,11 @@ void	Server::selectLoop( int i, struct sockaddr_in _clientaddr, int numbytes ) {
 				std::vector<Client>::iterator it = searchClient(i);
 				if (it != _Clients.end()) {
 					Client& client = *it;
-					if(!client.authenticateClient(_password, buf, _Clients)){
-						disconnectClient(it);
-						return;
-					}
-					//std::cout << "CLIENTFD: " << client.getFD() << " is Auth: " << client.getAuth() << std::endl;
-					cmdHandler(buffer, client);
+					
+					client.authenticateClient(_password, buf, _Clients);
+					std::cout << "CLIENTFD: " << client.getFD() << " is Auth: " << client.getAuth() << std::endl;
+					if (client.getAuth())
+						cmdHandler(buffer, client);
 					
 				} else {
 					disconnectClient(it);
