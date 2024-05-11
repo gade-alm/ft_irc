@@ -24,8 +24,6 @@ Server::Server( const char* portValue, const std::string &passwordValue ){
 	_password = passwordValue;
 	initAddr();
 	setSocket(socket(serverAddr.sin_family, SOCK_STREAM, PROTOCOL));
-	fcntl(_serverSocket, F_SETFL, O_NONBLOCK);
-
 
 	if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, &used, sizeof(used)) == -1){
 		perror ("setsockopt");
@@ -90,54 +88,57 @@ void	Server::selectLoop( struct sockaddr_in _clientaddr ) {
 
 	_selectfds = _masterfds;
 	if (select(maxfds + 1, &_selectfds, NULL, NULL, NULL) == -1) {
-		//perror ("select error");
+		perror ("SELECT:");
 		return ;
 	}
-	for (int i = 0; i <= maxfds; i++){
-		if (FD_ISSET( i , &_selectfds )) 
+	for (int i = 0; i <= maxfds; i++) {
+		
+	if ( FD_ISSET( i , &_selectfds ) != 0 ) 
+	{
+		if ( i == _serverSocket )
 		{
-			if ( i == _serverSocket )
+			socklen_t addrSize = sizeof(_clientaddr);
+			if ((_clientfd = accept(_serverSocket, (struct sockaddr *)&_clientaddr, &addrSize)) != -1)
 			{
-				socklen_t addrSize = sizeof(_clientaddr);
-				if ((_clientfd = accept(_serverSocket, (struct sockaddr *)&_clientaddr, &addrSize)) != -1)
-				{
-					FD_SET(_clientfd, &_masterfds);
-					if (_clientfd > maxfds)
-						maxfds = _clientfd;
-					Client client(_clientfd);
-					_Clients.push_back(client);
-				}
-				else
-					perror ("accept error");
+				FD_SET(_clientfd, &_masterfds);
+				if (_clientfd > maxfds)
+					maxfds = _clientfd;
+				Client client(_clientfd);
+				_Clients.push_back(client);
 			}
-			else {
-				int numbytes;
-				char test[1024];
-				std::string buffer;
-				while((numbytes = recv(i, test, sizeof(test) , MSG_DONTWAIT)) > 0)
-					buffer.append(test, numbytes);
-				std::cout << buffer << std::endl;
-				for (int j = 0; j <= maxfds + 1; j++) {
+			else
+				perror ("accept error");
+		}
+		else {
+			int numbytes = 0;
+			if ((numbytes = recv(i, buf, sizeof(buf), MSG_DONTWAIT)) < 1)
+			{
+				if (errno == EAGAIN || errno == EWOULDBLOCK)
+					continue;
+				else
+				{
+					perror("recv error");
+					close (i);
+					FD_CLR(i, &_masterfds);
+				}
+			}
+			else
+			{
+				std::string buffer(buf, numbytes);
+				for (int j = 0; j < maxfds; j++){
 					if (FD_ISSET(j, &_masterfds)){
-						
-							std::cout << " TESTE " << std::endl;
-							std::vector<Client>::iterator it = searchClient(j + 1);
-							if (it != _Clients.end()) {
-								Client& client = *it;
-								if(!client.authenticateClient(_password, buffer, _Clients)){
-									disconnectClient(it);
-									return;
-								}
-								// std::cout << "CLIENTFD: " << client.getFD() << " is Auth: " << client.getAuth() << std::endl;
-								cmdHandler(buffer, client);
-								
-							
-							// else 
-							// {
-							// 	disconnectClient(it);
-							// 	return;
-							// }
+					std::vector<Client>::iterator it = searchClient(j + 1);
+					if (it != _Clients.end()) {
+						Client& client = *it;
+						client.authenticateClient(_password, buf, _Clients);
+						std::cout << "CLIENTFD: " << client.getFD() << " is Auth: " << client.getAuth() << std::endl;
+						if (client.getAuth())
+							cmdHandler(buffer, client);
+						} else {
+							disconnectClient(it);
+							return;
 						}
+					}
 					}
 				}
 			}
@@ -147,7 +148,7 @@ void	Server::selectLoop( struct sockaddr_in _clientaddr ) {
 
 std::vector<Client>::iterator Server::searchClient(int fd){
 	std::vector<Client>::iterator it;
-	for (it = _Clients.begin(); it != _Clients.end(); ++it) {
+	for (it = _Clients.begin(); it != _Clients.end(); it++) {
     	if (it->getFD() == fd)
        		break;
 	}
@@ -156,7 +157,7 @@ std::vector<Client>::iterator Server::searchClient(int fd){
 
 std::vector<Client>::iterator Server::searchClient(std::string name){
 	std::vector<Client>::iterator it;
-	for (it = _Clients.begin(); it != _Clients.end(); ++it) {
+	for (it = _Clients.begin(); it != _Clients.end(); it++) {
     	if (it->getNick() == name)
        		break;
 	}

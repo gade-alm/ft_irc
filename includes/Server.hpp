@@ -16,6 +16,7 @@
 # include <netinet/in.h>
 # include <sys/time.h>
 # include <sys/select.h>
+# include <errno.h>
 
 # define MINPORT 1024
 # define MAXPORT 65535
