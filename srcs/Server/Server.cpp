@@ -403,13 +403,42 @@ void Server::invite(std::vector<std::string> CMD, Client &client) {
  * + or - sign in a flag                     *
  ********************************************/
 void Server::mode(std::vector<std::string> CMD, Client &client) {
-  char cmds[5] = {'i', 't', 'k', 'o', 'l'};
-  void (Server::*myCMDS[5])(std::vector<std::string>, Client &,
-                            bool) = {&Server::inviteOnly};
+  std::string cmds = "itkol";
+  void (Server::*myCMDS[5])(std::vector<std::string>, Client &, bool) = {
+      &Server::inviteOnly, &Server::topicFlag, &Server::passwordFlag,
+      &Server::operatorFlag, &Server::userLimitFlag};
+  std::string flags;
 
   // Com dois argumentos printar as permissoes
+  if (CMD.size() == 2) {
+    flags = printArgs(CMD, client);
+  }
   // Com mais setar permissoes
   // Caso haja um k vai haver mais um argumento que vai ser a password
+  for (int i = 2; i < CMD.size() && (CMD[i][0] != '+' || CMD[i][0] != '-');
+       i++) {
+    for (int j = 1; j < CMD[i].size(); i++) {
+      flags += CMD[i][0];
+      if (CMD[i][0] == '+') {
+        if (flags.find(CMD[i][j]) == std::string::npos) flags += CMD[i][j];
+      } else {
+        try {
+          size_t index = CMD[i][j];
+
+          flags.erase(flags.find(index));
+          flags.erase(flags.find(index));
+        } catch (std::exception &e) {
+        }
+      }
+    }
+  }
+  for (int i = 0; i < flags.size(); i += 2) {
+    for (int j = 0;
+         i < flags.size() - 1 && cmds.find(flags[i + 1]) == std::string::npos;
+         i++) {
+    }
+    (this->*myCMDS[i])(CMD, client, (flags[i] == '+'));
+  }
 }
 
 void Server::inviteOnly(std::vector<std::string> CMD, Client &client,
@@ -420,6 +449,7 @@ void Server::inviteOnly(std::vector<std::string> CMD, Client &client,
 
   if (itChannel == _Channels.end()) return;
   plus ? mode = true : mode = false;
+  if (itChannel->getInvMode() == mode) return;
   itChannel->setInvMode(mode);
 }
 
@@ -431,6 +461,7 @@ void Server::topicFlag(std::vector<std::string> CMD, Client &client,
 
   if (itChannel == _Channels.end()) return;
   plus ? mode = true : mode = false;
+  if (itChannel->getTopicMode() == mode) return;
   itChannel->setTopicMode(mode);
 }
 
@@ -443,6 +474,7 @@ void Server::operatorFlag(std::vector<std::string> CMD, Client &client,
 
   if (itChannel == _Channels.end()) return;
   plus ? mode = true : mode = false;
+  if (itClient->isOP() == mode) return;
   itClient->setOp(mode);
 }
 
@@ -454,5 +486,29 @@ void Server::userLimitFlag(std::vector<std::string> CMD, Client &client,
 
   if (itChannel == _Channels.end()) return;
   plus ? mode = true : mode = false;
+  if (itChannel->getLimitMode() == mode) return;
   itChannel->setLimitMode(mode);
+}
+
+void Server::passwordFlag(std::vector<std::string> CMD, Client &client,
+                          bool plus) {
+  std::string channel = CMD[1];
+  std::vector<Channel>::iterator itChannel = searchChannel(channel);
+  int i;
+
+  (void)plus;
+  for (i = 2; i < CMD.size() && (CMD[i][0] != '+' || CMD[i][0] != '-'); i++);
+  if (itChannel->getPassword() == "") itChannel->setPassword(CMD[i]);
+}
+
+std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
+  std::string flags;
+  std::vector<Channel>::iterator itChannel = searchChannel(CMD[1]);
+
+  flags = '+';
+  if (itChannel->getInvMode()) flags += 'i';
+  if (itChannel->getTopicMode()) flags += 't';
+  if (itChannel->getPassword() != "") flags += 'k';
+
+  return flags;
 }

@@ -30,11 +30,13 @@ void Channel::setInvMode(bool mode) { _inviteonly = mode; }
 
 bool Channel::getInvMode() const { return _inviteonly; }
 
-void Channel::setLimit(long limit) { _limit = limit; }
+void Channel::setLimit(long limit) { _userlimit = limit; }
 
 long Channel::getLimit() const { return _userlimit; }
 
 void Channel::setLimitMode(bool mode) { _limit = mode; }
+
+bool Channel::getLimitMode() const { return _limit; }
 
 const std::vector<Client>& Channel::getUserOn() const { return _Users; }
 

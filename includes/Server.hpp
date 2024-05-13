@@ -50,6 +50,12 @@ class Server {
   char buf[1024];
   sockaddr_in serverAddr;
   Server(const char *portValue, const std::string &passwordValue);
+  void inviteOnly(std::vector<std::string> CMD, Client &client, bool plus);
+  void topicFlag(std::vector<std::string> CMD, Client &client, bool plus);
+  void operatorFlag(std::vector<std::string> CMD, Client &client, bool plus);
+  void userLimitFlag(std::vector<std::string> CMD, Client &client, bool plus);
+  void passwordFlag(std::vector<std::string> CMD, Client &client, bool plus);
+  std::string printArgs(std::vector<std::string> CMD, Client &client);
 
   void setSocket(int socketFd);
   void setBind(void);
@@ -71,10 +77,6 @@ class Server {
   void disconnectClient(std::vector<Client>::iterator it);
   void invite(std::vector<std::string> CMD, Client &client);
   void mode(std::vector<std::string> CMD, Client &client);
-  void inviteOnly(std::vector<std::string> CMD, Client &client, bool plus);
-  void topicFlag(std::vector<std::string> CMD, Client &client, bool plus);
-  void operatorFlag(std::vector<std::string> CMD, Client &client, bool plus);
-  void userLimitFlag(std::vector<std::string> CMD, Client &client, bool plus);
 
   ~Server();
 };
