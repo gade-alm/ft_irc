@@ -92,59 +92,54 @@ void	Server::selectLoop( struct sockaddr_in _clientaddr ) {
 		return ;
 	}
 	for (int i = 0; i <= maxfds; i++) {
-		
-	if ( FD_ISSET( i , &_selectfds ) != 0 ) 
-	{
-		if ( i == _serverSocket )
+		if ( FD_ISSET( i , &_selectfds ) ) 
 		{
-			socklen_t addrSize = sizeof(_clientaddr);
-			if ((_clientfd = accept(_serverSocket, (struct sockaddr *)&_clientaddr, &addrSize)) != -1)
+			if ( i == _serverSocket )
 			{
-				FD_SET(_clientfd, &_masterfds);
-				if (_clientfd > maxfds)
-					maxfds = _clientfd;
-				Client client(_clientfd);
-				_Clients.push_back(client);
+				socklen_t addrSize = sizeof(_clientaddr);
+				if ((_clientfd = accept(_serverSocket, (struct sockaddr *)&_clientaddr, &addrSize)) != -1)
+				{
+					FD_SET(_clientfd, &_masterfds);
+					if (_clientfd > maxfds)
+						maxfds = _clientfd;
+					Client client(_clientfd);
+					_Clients.push_back(client);
+				}
+				else
+					perror ("accept error");
 			}
-			else
-				perror ("accept error");
-		}
-		else {
-			int numbytes = 0;
-			if ((numbytes = recv(i, buf, sizeof(buf), MSG_DONTWAIT)) < 1)
-			{
-				if (errno == EAGAIN || errno == EWOULDBLOCK)
-					continue;
+			else {
+				int numbytes = 0;
+				if ((numbytes = recv(i, buf, sizeof(buf), MSG_DONTWAIT)) < 1)
+				{
+					if (errno == EAGAIN || errno == EWOULDBLOCK)
+						continue;
+					else
+					{
+						perror("recv error");
+						close (i);
+						FD_CLR(i, &_masterfds);
+					}
+				}
 				else
 				{
-					perror("recv error");
-					close (i);
-					FD_CLR(i, &_masterfds);
-				}
-			}
-			else
-			{
-				std::string buffer(buf, numbytes);
-				for (int j = 0; j < maxfds; j++){
-					if (FD_ISSET(j, &_masterfds)){
-					std::vector<Client>::iterator it = searchClient(j + 1);
-					if (it != _Clients.end()) {
-						Client& client = *it;
-						client.authenticateClient(_password, buf, _Clients);
-						std::cout << "CLIENTFD: " << client.getFD() << " is Auth: " << client.getAuth() << std::endl;
-						if (client.getAuth())
-							cmdHandler(buffer, client);
-						} else {
-							disconnectClient(it);
-							return;
+					std::string buffer(buf, numbytes);
+					std::vector<Client>::iterator it = searchClient(i);
+						if (it != _Clients.end()) {
+							Client& client = *it;
+							client.authenticateClient(_password, buf, _Clients);
+							std::cout << "CLIENTFD: " << client.getFD() << " is Auth: " << client.getAuth() << std::endl;
+							if (client.getAuth())
+								cmdHandler(buffer, client);
+							} else {
+								disconnectClient(it);
+								return;
+							}
+						}
 						}
 					}
-					}
 				}
 			}
-		}
-	}
-}
 
 std::vector<Client>::iterator Server::searchClient(int fd){
 	std::vector<Client>::iterator it;
