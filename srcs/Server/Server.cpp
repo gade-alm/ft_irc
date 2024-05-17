@@ -1,5 +1,4 @@
 #include "Server.hpp"
-
 //static void parserTest ( std::string buffer, int i );
 Server::Server( void ) {
 }
@@ -248,26 +247,30 @@ void	Server::deliveryMSG(std::vector<std::string> CMD, Client &client){
 	std::string channelname = CMD[1];
 	//std::cout << "CHANNEL NAME: " << channelname << std::endl;
 	std::string message = ":" + client.getNick() + "!~" + client.getUser() + " PRIVMSG "\
-	+ channelname + " " + CMD[2];
+	+ channelname + " " + prepReason(CMD, 2);
 	//std::cout << "MESSAGE: " << message << std::endl;
 	//std::cout << itChannel->getName() << std::endl;
 	if (channelname[0] != '#'){
 		std::vector<Client>::iterator itClient = searchClient(channelname);
+		if(itClient == _Clients.end())
+			return ;
 		sendMessage(message, itClient->getFD());
 		return ;
 	}
 
 	std::vector<Channel>::iterator itChannel = searchChannel(channelname);
+	if (itChannel == _Channels.end())
+		return;
 	for(std::vector<Client>::iterator itClient = itChannel->beginUsers(); itClient != itChannel->endUsers(); itClient++){
 		if(itClient->getFD() != client.getFD())
 			sendMessage(message, itClient->getFD());
 	}
 }
 
-std::string prepReason(std::vector<std::string> CMD){
+std::string Server::prepReason(std::vector<std::string> CMD, int i){
 	std::string reason;
-	for(std::vector<std::string>::iterator it = CMD.begin() + 3; it != CMD.end(); it++){
-		if (*it != CMD[3])
+	for(std::vector<std::string>::iterator it = CMD.begin() + i; it != CMD.end(); it++){
+		if (*it != CMD[i])
 			reason += " ";
 		reason += *it;
 	}
@@ -280,7 +283,7 @@ void	Server::kickFromChannel(std::vector<std::string> CMD, Client &client){
 	// :server_name KICK #channelname username :reason
 	std::string channelname = CMD[1];
 	std::string nick = CMD[2];
-	std::string reason = (CMD.size() >= 4) ? prepReason(CMD) : "";
+	std::string reason = (CMD.size() >= 4) ? prepReason(CMD, 3) : "";
 	std::vector<Channel>::iterator it = searchChannel(channelname);
 	if (it == _Channels.end())
 		return;

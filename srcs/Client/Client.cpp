@@ -100,8 +100,10 @@ bool Client::checkPass(std::string password, std::string input){
         //disconnect();
         return false;
     }
-    size_t end = input.find('\n', found + 4);
-    std::string afterPass = input.substr(found + 5, end - (found + 5) - 1);
+    size_t end = input.find('\r', found + 5);
+		if (end == std::string::npos)
+		end = input.find('\n', found + 5);
+    std::string afterPass = input.substr(found + 5, end - (found + 5));
     if (!afterPass.empty() && afterPass[0] == ':')
         afterPass.erase(0, 1);
     if (afterPass != password){
@@ -122,6 +124,8 @@ bool Client::checkNick(std::string input, std::vector<Client> &Clients){
         return false;
     }
     size_t end = input.find('\r', found + 5);
+		if (end == std::string::npos)
+		end = input.find('\n', found + 5);
     std::string afterNick = input.substr(found + 5, end - (found + 5));
     if (!afterNick.empty() && afterNick[0] == ':')
         afterNick.erase(0, 1);
@@ -146,6 +150,8 @@ bool Client::checkName(std::string input){
         return false;
     }
     size_t end = input.find(' ', found + 5);
+		if (end == std::string::npos)
+		end = input.find('\n', found + 5);
     std::string afterUser = input.substr(found + 5, end - (found + 5));
     if (!afterUser.empty() && afterUser[0] == ':')
         afterUser.erase(0, 1);
