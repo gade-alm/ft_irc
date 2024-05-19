@@ -116,7 +116,6 @@ void Server::selectLoop(int i, struct sockaddr_in _clientaddr, int numbytes) {
           // std::cout << "CLIENTFD: " << client.getFD() << " is Auth: " <<
           // client.getAuth() << std::endl;
           cmdHandler(buffer, client);
-
         } else {
           disconnectClient(it);
           return;
@@ -483,6 +482,7 @@ void Server::userLimitFlag(std::vector<std::string> CMD, Client &client,
   std::string channel = CMD[1];
   std::vector<Channel>::iterator itChannel = searchChannel(channel);
   bool mode;
+  std::string parameter = (plus == true) ? "+l" : "-l";
 
   if (itChannel == _Channels.end()) return;
   plus ? mode = true : mode = false;
@@ -499,6 +499,7 @@ void Server::passwordFlag(std::vector<std::string> CMD, Client &client,
   (void)plus;
   for (i = 2; i < CMD.size() && (CMD[i][0] != '+' || CMD[i][0] != '-'); i++);
   if (itChannel->getPassword() == "") itChannel->setPassword(CMD[i]);
+  sendMessage(msg, client.getFD());
 }
 
 std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
@@ -510,5 +511,17 @@ std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
   if (itChannel->getTopicMode()) flags += 't';
   if (itChannel->getPassword() != "") flags += 'k';
 
+  std::string msg =
+      ':' + "127.0.0.1 324" + client.getNick() + ' ' + CMD[1] + flags;
+  sendMessage(msg, client.getFD());
   return flags;
+}
+
+std::string Server::msgMode(std::vector<std::string> CMD, Client client,
+                            std::string parameter) {
+  std::string msg;
+
+  msg = ":" + client.getNick() + '!' + client.getUser() + "127.0.0.1" + ' ' +
+        CMD[0] + ' ' + CMD[1] + ' ' + parameter;
+  return msg;
 }

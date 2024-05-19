@@ -56,6 +56,7 @@ class Server {
   void userLimitFlag(std::vector<std::string> CMD, Client &client, bool plus);
   void passwordFlag(std::vector<std::string> CMD, Client &client, bool plus);
   std::string printArgs(std::vector<std::string> CMD, Client &client);
+  std::string msgMode(std::vector<std::string> CMD, Client client, std::string parameter);
 
   void setSocket(int socketFd);
   void setBind(void);
