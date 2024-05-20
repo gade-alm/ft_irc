@@ -50,11 +50,11 @@ class Server {
   char buf[1024];
   sockaddr_in serverAddr;
   Server(const char *portValue, const std::string &passwordValue);
-  void inviteOnly(std::vector<std::string> CMD, Client &client, bool plus);
-  void topicFlag(std::vector<std::string> CMD, Client &client, bool plus);
-  void operatorFlag(std::vector<std::string> CMD, Client &client, bool plus);
-  void userLimitFlag(std::vector<std::string> CMD, Client &client, bool plus);
-  void passwordFlag(std::vector<std::string> CMD, Client &client, bool plus);
+  void inviteOnly(std::vector<std::string> CMD, Client &client, bool plus, size_t &argsUsed);
+  void topicFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t &argsUsed);
+  void operatorFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t &argsUsed);
+  void userLimitFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t &argsUsed);
+  void passwordFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t &argsUsed);
   std::string printArgs(std::vector<std::string> CMD, Client &client);
   std::string msgMode(std::vector<std::string> CMD, Client client, std::string parameter);
 

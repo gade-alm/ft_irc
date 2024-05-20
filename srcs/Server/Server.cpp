@@ -1,6 +1,8 @@
 #include "Server.hpp"
 
 #include <algorithm>
+#include <sstream>
+#include <string>
 
 // static void parserTest ( std::string buffer, int i );
 Server::Server(void) {}
@@ -303,7 +305,7 @@ void Server::kickFromChannel(std::vector<std::string> CMD, Client &client) {
 
 std::vector<std::string> Server::parseCMD(std::string buffer) {
   size_t start = 0;
-  size_t end;
+  size_t end = 0;
   std::string word;
 
   std::vector<std::string> CMD;
@@ -403,7 +405,8 @@ void Server::invite(std::vector<std::string> CMD, Client &client) {
  ********************************************/
 void Server::mode(std::vector<std::string> CMD, Client &client) {
   std::string cmds = "itkol";
-  void (Server::*myCMDS[5])(std::vector<std::string>, Client &, bool) = {
+  void (Server::*myCMDS[5])(std::vector<std::string>, Client &, bool,
+                            size_t &) = {
       &Server::inviteOnly, &Server::topicFlag, &Server::passwordFlag,
       &Server::operatorFlag, &Server::userLimitFlag};
   std::string flags;
@@ -414,12 +417,14 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
   }
   // Com mais setar permissoes
   // Caso haja um k vai haver mais um argumento que vai ser a password
-  for (int i = 2; i < CMD.size() && (CMD[i][0] != '+' || CMD[i][0] != '-');
+  for (size_t i = 2; i < CMD.size() && (CMD[i][0] != '+' || CMD[i][0] != '-');
        i++) {
-    for (int j = 1; j < CMD[i].size(); i++) {
-      flags += CMD[i][0];
-      if (CMD[i][0] == '+') {
-        if (flags.find(CMD[i][j]) == std::string::npos) flags += CMD[i][j];
+    for (size_t j = 1; j < CMD[i].size(); i++) {
+      if (CMD[i][0] != '+' && CMD[i][0] != '-') continue;
+      if (flags.find(CMD[i][j]) == std::string::npos) {
+        flags += CMD[i][0];
+        flags += CMD[i][j];
+        (this->*myCMDS[i])(CMD, client, (CMD[i][j] == '+'), i);
       } else {
         try {
           size_t index = CMD[i][j];
@@ -431,88 +436,113 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
       }
     }
   }
-  for (int i = 0; i < flags.size(); i += 2) {
-    for (int j = 0;
-         i < flags.size() - 1 && cmds.find(flags[i + 1]) == std::string::npos;
-         i++) {
-    }
-    (this->*myCMDS[i])(CMD, client, (flags[i] == '+'));
-  }
 }
 
-void Server::inviteOnly(std::vector<std::string> CMD, Client &client,
-                        bool plus) {
-  std::string channel = CMD[1];
+void Server::inviteOnly(std::vector<std::string> CMD, Client &client, bool plus,
+                        size_t &argsUsed) {
+  std::string channel = CMD[1], msg;
   std::vector<Channel>::iterator itChannel = searchChannel(channel);
   bool mode;
 
+  (void)argsUsed;
   if (itChannel == _Channels.end()) return;
   plus ? mode = true : mode = false;
   if (itChannel->getInvMode() == mode) return;
   itChannel->setInvMode(mode);
+  msg = msgMode(CMD, client, (plus == true) ? "+i" : "-i");
+  sendMessage(msg, client.getFD());
 }
 
-void Server::topicFlag(std::vector<std::string> CMD, Client &client,
-                       bool plus) {
-  std::string channel = CMD[1];
+void Server::topicFlag(std::vector<std::string> CMD, Client &client, bool plus,
+                       size_t &argsUsed) {
+  std::string channel = CMD[1], msg;
   std::vector<Channel>::iterator itChannel = searchChannel(channel);
   bool mode;
 
+  (void)argsUsed;
   if (itChannel == _Channels.end()) return;
   plus ? mode = true : mode = false;
   if (itChannel->getTopicMode() == mode) return;
   itChannel->setTopicMode(mode);
+  msg = msgMode(CMD, client, (plus == true) ? "+t" : "-t");
+  sendMessage(msg, client.getFD());
 }
 
 void Server::operatorFlag(std::vector<std::string> CMD, Client &client,
-                          bool plus) {
-  std::string channel = CMD[1];
+                          bool plus, size_t &argsUsed) {
+  std::string channel = CMD[1], msg;
   std::vector<Channel>::iterator itChannel = searchChannel(channel);
-  std::vector<Client>::iterator itClient = searchClient(client.getFD());
+  std::vector<Client>::iterator itClient;
   bool mode;
+  size_t i;
 
-  if (itChannel == _Channels.end()) return;
+  if (itChannel == _Channels.end()) return;  // NOT FOUND
+  for (i = argsUsed; i < CMD.size(); i++) {
+    if (CMD[i][0] != '+' && CMD[i][0] != '-') break;
+  };
+  argsUsed = i;
+  itClient = itChannel->searchClient(client.getNick());
   plus ? mode = true : mode = false;
   if (itClient->isOP() == mode) return;
   itClient->setOp(mode);
+  msg = msgMode(CMD, client, (plus == true) ? "+o " + CMD[i] : "-o " + CMD[i]);
+  sendMessage(msg, client.getFD());
 }
 
 void Server::userLimitFlag(std::vector<std::string> CMD, Client &client,
-                           bool plus) {
-  std::string channel = CMD[1];
+                           bool plus, size_t &argsUsed) {
+  std::string channel = CMD[1], msg;
+  std::stringstream parameter;
   std::vector<Channel>::iterator itChannel = searchChannel(channel);
   bool mode;
-  std::string parameter = (plus == true) ? "+l" : "-l";
+  size_t i;
 
   if (itChannel == _Channels.end()) return;
   plus ? mode = true : mode = false;
+  for (i = argsUsed; i < CMD.size(); i++) {
+    if (CMD[i][0] != '+' && CMD[i][0] != '-') break;
+  };
+  argsUsed = i;
   if (itChannel->getLimitMode() == mode) return;
   itChannel->setLimitMode(mode);
+  itChannel->setLimit(atoi(CMD[i].c_str()));
+  parameter << ((plus == true) ? "+l " : "-l ");
+  parameter << itChannel->getLimit();
+  msg = msgMode(CMD, client, parameter.str());
+  sendMessage(msg, client.getFD());
 }
 
 void Server::passwordFlag(std::vector<std::string> CMD, Client &client,
-                          bool plus) {
-  std::string channel = CMD[1];
+                          bool plus, size_t &argsUsed) {
+  std::string channel = CMD[1], msg;
   std::vector<Channel>::iterator itChannel = searchChannel(channel);
-  int i;
+  size_t i;
 
   (void)plus;
-  for (i = 2; i < CMD.size() && (CMD[i][0] != '+' || CMD[i][0] != '-'); i++);
+  for (i = argsUsed; i < CMD.size(); i++) {
+    if (CMD[i][0] != '+' && CMD[i][0] != '-') break;
+  }
   if (itChannel->getPassword() == "") itChannel->setPassword(CMD[i]);
+  msg = msgMode(CMD, client, (plus == true) ? "+k " + CMD[i] : "-k" + CMD[i]);
   sendMessage(msg, client.getFD());
 }
 
 std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
-  std::string flags;
+  std::string flags, msg;
   std::vector<Channel>::iterator itChannel = searchChannel(CMD[1]);
+  std::vector<Client>::iterator itClient =
+      itChannel->searchClient(client.getNick());
 
+  if (itChannel == _Channels.end()) return "";  // NOT FOUND
+  if (itClient == _Clients.end()) return "";    // NOT FOUND
   flags = '+';
   if (itChannel->getInvMode()) flags += 'i';
   if (itChannel->getTopicMode()) flags += 't';
   if (itChannel->getPassword() != "") flags += 'k';
+  if (itChannel->getLimitMode()) flags += 'l';
 
-  std::string msg =
-      ':' + "127.0.0.1 324" + client.getNick() + ' ' + CMD[1] + flags;
+  msg = ":" + client.getNick() + "@127.0.0.1 324" + client.getNick() + " " +
+        CMD[1] + flags;
   sendMessage(msg, client.getFD());
   return flags;
 }
@@ -521,7 +551,7 @@ std::string Server::msgMode(std::vector<std::string> CMD, Client client,
                             std::string parameter) {
   std::string msg;
 
-  msg = ":" + client.getNick() + '!' + client.getUser() + "127.0.0.1" + ' ' +
+  msg = ":" + client.getNick() + '!' + client.getUser() + "@127.0.0.1" + ' ' +
         CMD[0] + ' ' + CMD[1] + ' ' + parameter;
   return msg;
 }
