@@ -94,17 +94,20 @@ bool Client::checkPass(std::string password, std::string input){
     std::string message;
     size_t found = input.find("PASS");
     if (found == std::string::npos){
-        message = "Server needs a password try to login with one.";
-        sendMessage(message, _clientfd);
+        
+        //message = ":IRC 464 Nick :Password incorrect\r\n";
+        //sendMessage(message, _clientfd);
         //disconnect();
         return false;
     }
-    size_t end = input.find('\n', found + 4);
-    std::string afterPass = input.substr(found + 5, end - (found + 5) - 1);
+    size_t end = input.find('\r', found + 5);
+	if (end == std::string::npos)
+		end = input.find('\n', found + 5);
+    std::string afterPass = input.substr(found + 5, end - (found + 5));
     if (!afterPass.empty() && afterPass[0] == ':')
         afterPass.erase(0, 1);
     if (afterPass != password){
-        message = "Wrong password.";
+        message = ":IRC 464 Nick :Password incorrect\r\n";
         sendMessage(message, _clientfd);
         //disconnect();
         return false;
@@ -116,11 +119,13 @@ bool Client::checkNick(std::string input, std::vector<Client> &Clients){
     std::string message;
     size_t found = input.find("NICK");
     if (found == std::string::npos){
-        message = "You must have a nickname to join this server.";
-        sendMessage(message, _clientfd);
+        //message = "You must have a nickname to join this server.";
+        //sendMessage(message, _clientfd);
         return false;
     }
     size_t end = input.find('\r', found + 5);
+	if (end == std::string::npos)
+		end = input.find('\n', found + 5);
     std::string afterNick = input.substr(found + 5, end - (found + 5));
     if (!afterNick.empty() && afterNick[0] == ':')
         afterNick.erase(0, 1);
@@ -140,11 +145,13 @@ bool Client::checkName(std::string input){
     std::string message;
     size_t found = input.find("USER");
     if (found == std::string::npos){
-        message = "You must have a username to join this server.";
-        sendMessage(message, _clientfd);
+        //message = "You must have a username to join this server.";
+        //sendMessage(message, _clientfd);
         return false;
     }
     size_t end = input.find(' ', found + 5);
+		if (end == std::string::npos)
+		end = input.find('\n', found + 5);
     std::string afterUser = input.substr(found + 5, end - (found + 5));
     if (!afterUser.empty() && afterUser[0] == ':')
         afterUser.erase(0, 1);
@@ -155,16 +162,19 @@ bool Client::checkName(std::string input){
 bool Client::authenticateClient(std::string password, std::string input, std::vector<Client> &Clients){
     if (_authenticated == true)
         return true;
-    //std::cout << input  << std::endl;
-    if(!checkPass(password, input))
-        return false;
-    if(!checkNick(input, Clients))
-        return false; 
-    if(!checkName(input))
-        return false;
-    _authenticated = true;
-    sendMessage("You are authenticated. Welcome.", _clientfd);
-    return true;
+    if (checkPass(password, input))
+        _registred = true;
+    checkNick(input, Clients);
+    checkName(input);
+	std::cout << "Input: " << input << std::endl;
+    std::cout << "Nick: " << _nickname << std::endl;
+    std::cout << "Name: " << _username << std::endl;
+    if (!_nickname.empty() && !_username.empty() && _registred){
+        sendMessage("You are authenticated. Welcome.", _clientfd);
+        _authenticated = true;
+        return true;
+    }
+    return false;
    /*  std::cout << "_nickname: " << _nickname << std::endl;
     std::cout << "_username: " << _username << std::endl;
     std::cout << _nickname.size() << std::endl;

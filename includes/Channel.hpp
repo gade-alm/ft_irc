@@ -32,13 +32,12 @@ class Channel{
 		void setTopic(std::string topic);
 		const std::string getTopic() const;
 
+		void setTopicMode(bool topic);
+		bool getTopicMode() const;
+
 		const std::vector<Client>& getUserOn() const;
 		void addUser(Client &client);
 		void rmUser(Client &client);
-
-		const std::vector<Client>& getOPsOn() const;
-		void addOP(Client client);
-		void rmOP(Client client);
 
 		void setInvMode(bool mode);
 		bool getInvMode() const;

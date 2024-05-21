@@ -79,6 +79,14 @@ void Channel::rmUser(Client &client){
     _Users.erase(it);
 }
 
+void Channel::setTopicMode(bool topic){
+    _topicneedop = topic;
+}
+
+bool Channel::getTopicMode() const{
+    return _topicneedop;
+}
+
 std::vector<Client>::iterator Channel::searchClient(int fd){
 	std::vector<Client>::iterator it;
 	for (it = _Users.begin(); it != _Users.end(); ++it) {
@@ -89,10 +97,12 @@ std::vector<Client>::iterator Channel::searchClient(int fd){
 }
 
 std::vector<Client>::iterator Channel::searchClient(std::string name){
-	std::vector<Client>::iterator it;
+    //std::cout << "ClientName: " << it->getNick() << " SIZE: "<< it->getNick().size() << std::endl;
+    //std::cout << "Name: " << name << " SIZE: "<< name.size() << std::endl;
+    std::vector<Client>::iterator it;
 	for (it = _Users.begin(); it != _Users.end(); ++it) {
     	if (it->getNick() == name){
-            std::cout << "True" << std::endl;
+            //std::cout << "True" << std::endl;
        		break;
         }
 	}
