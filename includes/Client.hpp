@@ -28,18 +28,25 @@ class Client {
   ~Client();
   Client& operator=(const Client& copy);
   bool operator==(const Client& copy) const;
+
   void setAuth(bool auth);
   bool getAuth();
+
   void setReg(bool reg);
   bool getReg();
+
   const std::string getNick() const;
   void setNick(std::string Nick);
+
   const std::string getUser() const;
   void setUser(std::string User);
+
   int getFD() const;
   void setFD(int FD);
+
   bool isOP() const;
-  void setOp(bool op);
+  void setOP(bool op);
+
   bool authenticateClient(std::string password, std::string input,
                           std::vector<Client>& Clients);
   void connect(std::string password);
