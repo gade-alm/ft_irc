@@ -51,11 +51,11 @@ class Server {
   sockaddr_in serverAddr;
   Server(const char *portValue, const std::string &passwordValue);
 
-  void inviteOnly(std::vector<std::string> CMD, Client &client, bool plus, size_t &argsUsed);
-  void topicFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t &argsUsed);
-  void operatorFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t &argsUsed);
-  void userLimitFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t &argsUsed);
-  void passwordFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t &argsUsed);
+  void inviteOnly(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
+  void topicFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
+  void operatorFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
+  void userLimitFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
+  void passwordFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
   std::string printArgs(std::vector<std::string> CMD, Client &client);
   std::string msgMode(std::vector<std::string> CMD, Client client, std::string parameter);
 
@@ -79,7 +79,7 @@ class Server {
   std::vector<Client>::iterator searchClient(int fd);
   std::vector<Client>::iterator searchClient(std::string name);
   std::vector<Channel>::iterator searchChannel(std::string channelname);
-  
+
   void disconnectClient(std::vector<Client>::iterator it);
   void invite(std::vector<std::string> CMD, Client &client);
   void mode(std::vector<std::string> CMD, Client &client);
