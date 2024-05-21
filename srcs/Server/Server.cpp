@@ -196,27 +196,26 @@ void Server::cmdHandler(std::string buffer, Client &client) {
     (this->*myCMDS[index])(CMD, client);
 }
 
-void Server::joinChannel(std::vector<std::string> CMD, Client &client) {
-  std::string channelname = CMD[1];
-  if (channelname[0] != '#') channelname = "#" + channelname;
-  if (!channelPrep(channelname, client)) {
-    // Mensagem de erro
-    return;
-  };
-  std::string output =
-      ":" + client.getNick() + "!" + client.getUser() + " JOIN " + channelname;
-  sendMessage(output, client.getFD());
+void Server::joinChannel(std::vector<std::string> CMD, Client &client){
+    std::string channelname = CMD[1];
+    if (channelname[0] != '#') 
+   		channelname = "#" + channelname;
+	
+	if (!channelPrep(channelname, client)) {
+		// INVALID MODE
+		return;
+	}
+	std::string output = ":" + client.getNick() + "!" + client.getUser() + " JOIN " + channelname;
+	sendMessage(output, client.getFD());
 
-  std::string message = ":" + client.getNick() + "!" + client.getUser() +
-                        " JOIN " + channelname + "\r\n";
-  std::vector<Channel>::iterator itChannel = searchChannel(channelname);
-  for (std::vector<Client>::iterator itClient = itChannel->beginUsers();
-       itClient != itChannel->endUsers(); itClient++) {
-    if (itClient->getFD() != client.getFD())
-      sendMessage(message, itClient->getFD());
-  }
-  /* 	std::vector<Channel>::iterator itChannel = searchChannel(channelname);
-          itChannel->printUsers(); */
+	std::string message = ":" + client.getNick() + "!" + client.getUser() + " JOIN " + channelname + "\r\n";
+	std::vector<Channel>::iterator itChannel = searchChannel(channelname);
+	for(std::vector<Client>::iterator itClient = itChannel->beginUsers(); itClient != itChannel->endUsers(); itClient++){
+		if(itClient->getFD() != client.getFD())
+			sendMessage(message, itClient->getFD());
+	}
+/* 	std::vector<Channel>::iterator itChannel = searchChannel(channelname);
+	itChannel->printUsers(); */
 }
 
 void Server::quitServer(std::vector<std::string> CMD, Client &client) {
@@ -229,8 +228,11 @@ void Server::quitServer(std::vector<std::string> CMD, Client &client) {
 bool Server::channelPrep(std::string channelname, Client &client) {
   std::vector<Channel>::iterator itChannel = searchChannel(channelname);
 
+	
   if (itChannel != _Channels.end()) {
     // Caso esteja em Invite Mode e sem invitation retornar logo.
+	itChannel->setInvMode(true);
+	std::cout << "CLIENT FD: " << client.getFD() << " " << itChannel->_invitation[0] << std::endl; 
     if (itChannel->getInvMode() &&
         std::find(itChannel->_invitation.begin(), itChannel->_invitation.end(),
                   client.getFD()) == itChannel->_invitation.end()) {
