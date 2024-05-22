@@ -225,8 +225,6 @@ bool Server::channelPrep(std::string channelname, Client &client) {
 
   if (itChannel != _Channels.end()) {
     // Caso esteja em Invite Mode e sem invitation retornar logo.
-    itChannel->setInvMode(true);
-    std::cout << "InvMode: " << itChannel->getInvMode() << std::endl;
     itInv = std::find(itChannel->_invitation.begin(),
                       itChannel->_invitation.end(), client.getFD());
     // std::cout << "CLIENT FD: " << client.getFD() << " "
@@ -237,6 +235,8 @@ bool Server::channelPrep(std::string channelname, Client &client) {
     itChannel->_invitation.erase(itInv);
     if (itChannel->searchClient(client.getFD()) == itChannel->endUsers())
       itChannel->addUser(client);
+    itChannel->setInvMode(true);
+    std::cout << "InvMode: " << itChannel->getInvMode() << std::endl;
     return true;
   }
   Channel channel(channelname);
