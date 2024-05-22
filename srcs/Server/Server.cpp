@@ -218,15 +218,15 @@ void Server::quitServer(std::vector<std::string> CMD, Client &client) {
 
 bool Server::channelPrep(std::string channelname, Client &client) {
   std::vector<Channel>::iterator itChannel = searchChannel(channelname);
-  std::vector<int>::iterator itInv =
-      std::find(itChannel->_invitation.begin(), itChannel->_invitation.end(),
-                client.getFD());
+  std::vector<int>::iterator itInv;
 
   if (itChannel != _Channels.end()) {
     // Caso esteja em Invite Mode e sem invitation retornar logo.
-    // itChannel->setInvMode(true);
-    std::cout << "CLIENT FD: " << client.getFD() << " "
-              << itChannel->_invitation[0] << std::endl;
+    itChannel->setInvMode(true);
+    itInv = std::find(itChannel->_invitation.begin(),
+                      itChannel->_invitation.end(), client.getFD());
+    // std::cout << "CLIENT FD: " << client.getFD() << " "
+    //           << itChannel->_invitation[0] << std::endl;
     if (itChannel->getInvMode() && itInv == itChannel->_invitation.end()) {
       return false;
     }
@@ -316,11 +316,11 @@ std::vector<std::string> Server::parseCMD(std::string buffer) {
       end = buffer.find("\r", start);
       word = buffer.substr(start, end - start);
       CMD.push_back(word);
-      break;
+      break;;
     }
     word = buffer.substr(start, end - start);
     CMD.push_back(word);
-    start = end + 1;
+    start = buffer.find_first_not_of(' ', end + 1);
   }
   return CMD;
 }
@@ -389,9 +389,9 @@ void Server::invite(std::vector<std::string> CMD, Client &client) {
     // Mensagem O usario se encontra no canal
     return;
   }
-  // Ajeitar mensagem de erro
-  msg = ":IRC341" + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + " " +
-        CMD[1] + " " + CMD[2];
+  // Ajeitar mensagem
+  msg = ":IRC341" + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] +
+        " " + CMD[1] + " " + CMD[2];
   sendMessage(msg, destiny->getFD());
   // Adicionar mensagens para quem recebe o invite
 }
@@ -450,7 +450,7 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
   // Algoritmo Para tratar flags
   for (size_t i = 0; i < CMD.size(); i++) {
     if (CMD[i][0] != '-' && CMD[i][0] != '+') continue;
-    for (size_t j = 0; j < CMD[0].size(); i++) {
+    for (size_t j = 0; j < CMD[0].size(); j++) {
       if (CMD[i][j] == '-' || CMD[i][j] == '+') {
         indexSign = j;
         continue;
@@ -612,11 +612,13 @@ void Server::passwordFlag(std::vector<std::string> CMD, Client &client,
   sendMessage(msg, client.getFD());
 }
 
+//ENviar mensagens dos modes msg = ":IRC " + CMD[0] + ' ' + CMD[1] + ' ' + flags;
+
 // Mensagens com para o MODE #A
 //>> :Aurora.AfterNET.Org 324 test1 #a +
 //>> :Aurora.AfterNET.Org 329 test1 #a 1716325933
 std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
-  std::string flags, msg;
+  std::string flags, msg, ip = IP;
   std::vector<Channel>::iterator itChannel = searchChannel(CMD[1]);
   std::vector<Client>::iterator itClient =
       itChannel->searchClient(client.getNick());
@@ -628,10 +630,9 @@ std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
   if (itChannel->getTopicMode()) flags += 't';
   if (itChannel->getPassword() != "") flags += 'k';
   if (itChannel->getLimitMode()) flags += 'l';
-  msg = ":IRC324" + client.getNick() + '!' + client.getUser() + ' ' + CMD[1] +
-        ' ' + flags;
+  msg = ":IRC 324 " + client.getNick() + " " + CMD[1] + " " + flags;
   sendMessage(msg, client.getFD());
-  msg = ":IRC329" + client.getNick() + '!' + client.getUser() + ' ' + CMD[1];
+  msg = ":IRC 329 " + client.getNick() + " #a +i";
   sendMessage(msg, client.getFD());
   return flags;
 }
