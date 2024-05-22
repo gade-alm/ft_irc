@@ -132,7 +132,8 @@ void Server::selectLoop(struct sockaddr_in _clientaddr) {
 
 std::vector<Client>::iterator Server::searchClient(int fd) {
   std::vector<Client>::iterator it;
-  for (it = _Clients.begin(); it != _Clients.end(); it++) {
+
+  for (it = _Clients.begin(); it != _Clients.end(); ++it) {
     if (it->getFD() == fd) break;
   }
   return it;
@@ -140,7 +141,8 @@ std::vector<Client>::iterator Server::searchClient(int fd) {
 
 std::vector<Client>::iterator Server::searchClient(std::string name) {
   std::vector<Client>::iterator it;
-  for (it = _Clients.begin(); it != _Clients.end(); it++) {
+
+  for (it = _Clients.begin(); it != _Clients.end(); ++it) {
     if (it->getNick() == name) break;
   }
   return it;
@@ -148,7 +150,8 @@ std::vector<Client>::iterator Server::searchClient(std::string name) {
 
 std::vector<Channel>::iterator Server::searchChannel(std::string channelname) {
   std::vector<Channel>::iterator it;
-  for (it = _Channels.begin(); it != _Channels.end(); it++) {
+
+  for (it = _Channels.begin(); it != _Channels.end(); ++it) {
     if (it->getName() == channelname) {
       break;
     }
@@ -223,6 +226,7 @@ bool Server::channelPrep(std::string channelname, Client &client) {
   if (itChannel != _Channels.end()) {
     // Caso esteja em Invite Mode e sem invitation retornar logo.
     itChannel->setInvMode(true);
+    std::cout << "InvMode: " << itChannel->getInvMode() << std::endl;
     itInv = std::find(itChannel->_invitation.begin(),
                       itChannel->_invitation.end(), client.getFD());
     // std::cout << "CLIENT FD: " << client.getFD() << " "
@@ -310,7 +314,7 @@ std::vector<std::string> Server::parseCMD(std::string buffer) {
   std::string word;
   std::vector<std::string> CMD;
 
-  while (end != buffer.size() - 2) {
+  while (start != buffer.size() - 2) {
     end = buffer.find(" ", start);
     if (end == std::string::npos) {
       end = buffer.find("\r", start);
@@ -443,7 +447,8 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
   size_t numArgs = 0, indexArgs = 2, indexSign = 0;
 
   // Com dois argumentos printar as permissoes
-  if (CMD.size() == 3) {
+  std::cout << "CMD SIZE: " << CMD.size() << std::endl;
+  if (CMD.size() == 2) {
     printArgs(CMD, client);
     return;
   }
@@ -623,6 +628,7 @@ std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
   std::vector<Client>::iterator itClient =
       itChannel->searchClient(client.getNick());
 
+  std::cout << itChannel->getInvMode() << std::endl;
   if (itChannel == _Channels.end()) return "";  // NOT FOUND
   if (itClient == _Clients.end()) return "";    // NOT FOUND
   flags = '+';
@@ -632,7 +638,7 @@ std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
   if (itChannel->getLimitMode()) flags += 'l';
   msg = ":IRC 324 " + client.getNick() + " " + CMD[1] + " " + flags;
   sendMessage(msg, client.getFD());
-  msg = ":IRC 329 " + client.getNick() + " #a +i";
+  msg = ":IRC 329 " + client.getNick() + " " + CMD[1] + " " + flags;
   sendMessage(msg, client.getFD());
   return flags;
 }
