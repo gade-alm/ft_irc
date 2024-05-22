@@ -453,7 +453,7 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
   // Algoritmo Para tratar flags
   for (size_t i = 0; i < CMD.size(); i++) {
     if (CMD[i][0] != '-' && CMD[i][0] != '+') continue;
-    for (size_t j = 0; j < CMD[0].size(); j++) {
+    for (size_t j = 0; j < CMD[i].size(); j++) {
       if (CMD[i][j] == '-' || CMD[i][j] == '+') {
         indexSign = j;
         continue;
@@ -478,7 +478,8 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
         }
         flag.second = indexArgs;
       }
-      flag.first = CMD[i][indexSign] + CMD[i][j];
+      flag.first += CMD[i][indexSign];
+      flag.first += CMD[i][j];
       itflag = searchFlagDiffSign(flags.begin(), flags.end(), flag.first[0],
                                   flag.first[1]);
       if (itflag != flags.end()) flags.erase(itflag);
@@ -625,7 +626,9 @@ std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
   std::vector<Channel>::iterator itChannel = searchChannel(CMD[1]);
   std::vector<Client>::iterator itClient =
       itChannel->searchClient(client.getNick());
+  bool test = itChannel->getInvMode();
 
+(void)test;
   std::cout << itChannel->getInvMode() << std::endl;
   if (itChannel == _Channels.end()) return "";  // NOT FOUND
   if (itClient == _Clients.end()) return "";    // NOT FOUND
@@ -645,7 +648,7 @@ std::string Server::msgMode(std::vector<std::string> CMD, Client client,
                             std::string parameter) {
   std::string msg;
 
-  msg = ":" + client.getNick() + '!' + client.getUser() + CMD[0] + ' ' +
+  msg = ":" + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + ' ' +
         CMD[1] + ' ' + parameter;
   return msg;
 }

@@ -1,8 +1,20 @@
 #include "Channel.hpp"
 
-Channel::Channel() : _name(""), _password("") {}
+Channel::Channel()
+    : _name(""),
+      _password(""),
+      _topic(""),
+      _topicneedop(false),
+      _limit(false),
+      _userlimit(0) {}
 
-Channel::Channel(std::string name) : _name(name) {}
+Channel::Channel(std::string name)
+    : _name(name),
+      _password(""),
+      _topic(""),
+      _topicneedop(false),
+      _limit(false),
+      _userlimit(0) {}
 
 Channel::~Channel() {}
 
@@ -10,7 +22,14 @@ Channel::Channel(const Channel& copy) { *this = copy; }
 
 Channel& Channel::operator=(const Channel& copy) {
   _name = copy._name;
+  _password = copy._password;
+  _topic = copy._topic;
+  _topicneedop = copy._topicneedop;
+  _inviteonly = copy._inviteonly;
+  _limit = copy._limit;
+  _userlimit = copy._userlimit;
   _Users = copy._Users;
+  _invitation = copy._invitation;
   return *this;
 }
 
@@ -72,8 +91,7 @@ std::vector<Client>::iterator Channel::endUsers() { return _Users.end(); }
 
 std::vector<Client>::iterator Channel::beginUsers() { return _Users.begin(); }
 
-
-//DEBUG
+// DEBUG
 void Channel::printUsers() {
   for (std::vector<Client>::iterator it = _Users.begin(); it != _Users.end();
        it++) {
