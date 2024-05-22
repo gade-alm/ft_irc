@@ -232,11 +232,10 @@ bool Server::channelPrep(std::string channelname, Client &client) {
     if (itChannel->getInvMode() && itInv == itChannel->_invitation.end()) {
       return false;
     }
-    itChannel->_invitation.erase(itInv);
+    if (itInv != itChannel->_invitation.end())
+      itChannel->_invitation.erase(itInv);
     if (itChannel->searchClient(client.getFD()) == itChannel->endUsers())
       itChannel->addUser(client);
-    itChannel->setInvMode(true);
-    std::cout << "InvMode: " << itChannel->getInvMode() << std::endl;
     return true;
   }
   Channel channel(channelname);
@@ -447,7 +446,6 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
   size_t numArgs = 0, indexArgs = 2, indexSign = 0;
 
   // Com dois argumentos printar as permissoes
-  std::cout << "CMD SIZE: " << CMD.size() << std::endl;
   if (CMD.size() == 2) {
     printArgs(CMD, client);
     return;
