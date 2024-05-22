@@ -218,17 +218,19 @@ void Server::quitServer(std::vector<std::string> CMD, Client &client) {
 
 bool Server::channelPrep(std::string channelname, Client &client) {
   std::vector<Channel>::iterator itChannel = searchChannel(channelname);
+  std::vector<int>::iterator itInv =
+      std::find(itChannel->_invitation.begin(), itChannel->_invitation.end(),
+                client.getFD());
 
   if (itChannel != _Channels.end()) {
     // Caso esteja em Invite Mode e sem invitation retornar logo.
-    itChannel->setInvMode(true);
+    // itChannel->setInvMode(true);
     std::cout << "CLIENT FD: " << client.getFD() << " "
               << itChannel->_invitation[0] << std::endl;
-    if (itChannel->getInvMode() &&
-        std::find(itChannel->_invitation.begin(), itChannel->_invitation.end(),
-                  client.getFD()) == itChannel->_invitation.end()) {
+    if (itChannel->getInvMode() && itInv == itChannel->_invitation.end()) {
       return false;
     }
+    itChannel->_invitation.erase(itInv);
     if (itChannel->searchClient(client.getFD()) == itChannel->endUsers())
       itChannel->addUser(client);
     return true;
@@ -367,23 +369,31 @@ void Server::topicChannel(std::vector<std::string> CMD, Client &client) {
 void Server::invite(std::vector<std::string> CMD, Client &client) {
   std::vector<Client>::iterator destiny = searchClient(CMD[1]);
   std::vector<Channel>::iterator channel = searchChannel(CMD[2]);
-  std::vector<Client>::iterator original;
+  std::vector<Client>::iterator verify;
   std::string msg;
 
   if (channel == _Channels.end()) {
     // Mensagem de erro
     return;
   }
-  original = std::find(channel->beginUsers(), channel->endUsers(), client);
-  if (destiny == _Clients.end() && original->isOP()) {
+  verify = std::find(channel->beginUsers(), channel->endUsers(), client);
+  if (destiny == _Clients.end() && verify->isOP()) {
     std::string msg = ":IRC 482 " + client.getNick() + " " +
                       channel->getName() + " :You're not channel operator\r\n";
     return;
   }
-  channel->_invitation.push_back(client.getFD());
-  msg = ':' + client.getNick() + '!' + client.getUser() + "@127.0.0.1 " +
-        CMD[0] + " " + CMD[1] + " " + CMD[2] + "\r\n";
+  verify = channel->searchClient(CMD[1]);
+  if (CMD[1] != client.getNick() && verify == channel->endUsers())
+    channel->_invitation.push_back(client.getFD());
+  else {
+    // Mensagem O usario se encontra no canal
+    return;
+  }
+  // Ajeitar mensagem de erro
+  msg = ":IRC341" + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + " " +
+        CMD[1] + " " + CMD[2];
   sendMessage(msg, destiny->getFD());
+  // Adicionar mensagens para quem recebe o invite
 }
 
 /**********************
@@ -602,7 +612,7 @@ void Server::passwordFlag(std::vector<std::string> CMD, Client &client,
   sendMessage(msg, client.getFD());
 }
 
-//Mensagens com para o MODE #A
+// Mensagens com para o MODE #A
 //>> :Aurora.AfterNET.Org 324 test1 #a +
 //>> :Aurora.AfterNET.Org 329 test1 #a 1716325933
 std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
@@ -618,8 +628,10 @@ std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
   if (itChannel->getTopicMode()) flags += 't';
   if (itChannel->getPassword() != "") flags += 'k';
   if (itChannel->getLimitMode()) flags += 'l';
-  msg =
-      ":" + client.getNick() + '!' + client.getUser() + " " + CMD[0] + ' ' + CMD[1] + ' ' + flags;
+  msg = ":IRC324" + client.getNick() + '!' + client.getUser() + ' ' + CMD[1] +
+        ' ' + flags;
+  sendMessage(msg, client.getFD());
+  msg = ":IRC329" + client.getNick() + '!' + client.getUser() + ' ' + CMD[1];
   sendMessage(msg, client.getFD());
   return flags;
 }
@@ -628,7 +640,7 @@ std::string Server::msgMode(std::vector<std::string> CMD, Client client,
                             std::string parameter) {
   std::string msg;
 
-  msg = ":" + client.getNick() + '!' + client.getUser() + "@127.0.0.1" + ' ' +
-        CMD[0] + ' ' + CMD[1] + ' ' + parameter;
+  msg = ":" + client.getNick() + '!' + client.getUser() + CMD[0] + ' ' +
+        CMD[1] + ' ' + parameter;
   return msg;
 }
