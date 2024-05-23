@@ -1,6 +1,7 @@
 #include "Server.hpp"
 
 #include <algorithm>
+#include <limits>
 #include <sstream>
 #include <string>
 
@@ -319,7 +320,8 @@ std::vector<std::string> Server::parseCMD(std::string buffer) {
       end = buffer.find("\r", start);
       word = buffer.substr(start, end - start);
       CMD.push_back(word);
-      break;;
+      break;
+      ;
     }
     word = buffer.substr(start, end - start);
     CMD.push_back(word);
@@ -446,6 +448,8 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
   size_t numArgs = 0, indexArgs = 2, indexSign = 0;
 
   // Com dois argumentos printar as permissoes
+  if (CMD.size() > 1 && searchChannel(CMD[1]) == _Channels.end())
+    return;  // Channel doesn't exist
   if (CMD.size() == 2) {
     printArgs(CMD, client);
     return;
@@ -575,7 +579,7 @@ void Server::operatorFlag(std::vector<std::string> CMD, Client &client,
   itClient = itChannel->searchClient(client.getNick());
   if (itClient == _Clients.end()) return;  // NOT FOUND
   plus ? mode = true : mode = false;
-  if (itClient->isOP() == mode) return;
+  if (itClient->isOP() == mode) return;  // Mode already set
   itClient->setOP(mode);
   msg = msgMode(CMD, client,
                 (plus == true) ? "+o " + CMD[argsUsed] : "-o " + CMD[argsUsed]);
@@ -588,12 +592,18 @@ void Server::userLimitFlag(std::vector<std::string> CMD, Client &client,
   std::stringstream parameter;
   std::vector<Channel>::iterator itChannel = searchChannel(channel);
   bool mode;
+  int limit;
 
   if (itChannel == _Channels.end()) return;  // NOT FOUND
   plus ? mode = true : mode = false;
   if (itChannel->getLimitMode() == mode) return;  // NOT FOUND
+  if (plus) {
+    limit = atoll(CMD[argsUsed].c_str());
+    if (limit <= 0 && limit > std::numeric_limits<int>::max())
+      return;  // Overflow or Invalid Argument
+    itChannel->setLimit(limit);
+  }
   itChannel->setLimitMode(mode);
-  itChannel->setLimit(atoi(CMD[argsUsed].c_str()));
   parameter << ((plus == true) ? "+l " : "-l ");
   parameter << itChannel->getLimit();
   msg = msgMode(CMD, client, parameter.str());
@@ -604,19 +614,32 @@ void Server::passwordFlag(std::vector<std::string> CMD, Client &client,
                           bool plus, size_t argsUsed) {
   std::string channel = CMD[1], msg;
   std::vector<Channel>::iterator itChannel = searchChannel(channel);
-  size_t i;
+  std::vector<Client>::iterator itClient;
 
-  (void)plus;
-  for (i = argsUsed; i < CMD.size(); i++) {
-    if (CMD[i][0] != '+' && CMD[i][0] != '-') break;
+  itClient = itChannel->searchClient(client.getNick());
+  if (itClient == itChannel->endUsers()) return;  // User Not Found
+  if (!itClient->isOP()) return;                  // Not OP
+  if (plus) {
+    if (itChannel->getPassword() != "")
+      ;
+    // Setar mensagem de flag already used
+    else {
+      itChannel->setPassword(CMD[argsUsed]);
+      msg = msgMode(CMD, client, "+k " + CMD[argsUsed]);
+    }
+  } else {
+    if (itChannel->getPassword() == CMD[argsUsed]) {
+      itChannel->setPassword("");
+      msg = msgMode(CMD, client, "-k " + CMD[argsUsed]);
+    } else {
+      ;  // Not Correct Password
+    }
   }
-  if (itChannel->getPassword() == "") itChannel->setPassword(CMD[argsUsed]);
-  msg = msgMode(CMD, client,
-                (plus == true) ? "+k " + CMD[argsUsed] : "-k" + CMD[argsUsed]);
   sendMessage(msg, client.getFD());
 }
 
-//ENviar mensagens dos modes msg = ":IRC " + CMD[0] + ' ' + CMD[1] + ' ' + flags;
+// ENviar mensagens dos modes msg = ":IRC " + CMD[0] + ' ' + CMD[1] + ' ' +
+// flags;
 
 // Mensagens com para o MODE #A
 //>> :Aurora.AfterNET.Org 324 test1 #a +
@@ -628,7 +651,7 @@ std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
       itChannel->searchClient(client.getNick());
   bool test = itChannel->getInvMode();
 
-(void)test;
+  (void)test;
   std::cout << itChannel->getInvMode() << std::endl;
   if (itChannel == _Channels.end()) return "";  // NOT FOUND
   if (itClient == _Clients.end()) return "";    // NOT FOUND
@@ -651,4 +674,14 @@ std::string Server::msgMode(std::vector<std::string> CMD, Client client,
   msg = ":" + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + ' ' +
         CMD[1] + ' ' + parameter;
   return msg;
+}
+
+void Server::outOfChannels(Client &clients) {
+  for (std::vector<Channel>::iterator it = _Channels.begin();
+       it != _Channels.end(); it++) {
+    for (std::vector<Client>::iterator ic = _Clients.begin();
+         ic != _Clients.end(); ic++) {
+      if (ic->getFD() == clients.getFD()) it->removeUser(ic->getFD());
+    }
+  }
 }

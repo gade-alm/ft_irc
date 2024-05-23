@@ -84,6 +84,8 @@ class Server {
   void invite(std::vector<std::string> CMD, Client &client);
   void mode(std::vector<std::string> CMD, Client &client);
 
+  void outOfChannels(Client& clients);
+
   ~Server();
 };
 

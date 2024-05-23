@@ -4,7 +4,7 @@ Channel::Channel()
     : _name(""),
       _password(""),
       _topic(""),
-      _topicneedop(false),
+      _topicneedop(true),
       _limit(false),
       _userlimit(0) {}
 
@@ -12,7 +12,7 @@ Channel::Channel(std::string name)
     : _name(name),
       _password(""),
       _topic(""),
-      _topicneedop(false),
+      _topicneedop(true),
       _limit(false),
       _userlimit(0) {}
 
@@ -99,4 +99,8 @@ void Channel::printUsers() {
               << " SIZE: " << it->getNick().size() << std::endl;
     std::cout << "Is OP? " << it->isOP() << std::endl;
   }
+}
+
+void  Channel::removeUser(int value) {
+  _Users.erase(searchClient(value));
 }
