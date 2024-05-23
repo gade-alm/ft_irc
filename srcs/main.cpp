@@ -1,7 +1,16 @@
 #include "Server.hpp"
 #include "Client.hpp"
-#include <signal.h>
 
+bool closedServer = false;
+
+void sigHandler(int signal){
+	if ( signal == SIGINT ){
+		close(4);
+ 		if (closedServer == false)
+    		closedServer = true;
+		return ;
+	}
+}
 
 int main ( int ac, char **av ) {
 
@@ -9,16 +18,18 @@ int main ( int ac, char **av ) {
 		std::cout << "Wrong number of parameters" << std::endl;
 		return 1;
 	}
-	// struct sigaction sa;
+	struct sigaction sa;
+	// sigemptyset(&sa.sa_mask);
 	// sa.sa_handler = sigHandler;
+	// sigaction(SIGINT, &sa, NULL);
+	signal(SIGINT, sigHandler);
+	sa.sa_flags = 0;
 
-	// if (sigaction(SIGINT, &sa, NULL))
-	// 	std::cout << " TESTE SIGNAL" << std::endl;
 	Server server(av[1], av[2]);
 	struct sockaddr_in clientaddr;
 	server.prepareFDs();
 
-	while (1) {
-		server.selectLoop( clientaddr);
+	while (!closedServer) {
+		server.selectLoop( clientaddr, &closedServer );
 	}
 }

@@ -26,7 +26,7 @@ Server::Server(const char *portValue, const std::string &passwordValue) {
   setSocket(socket(serverAddr.sin_family, SOCK_STREAM, PROTOCOL));
   if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, &used,
                  sizeof(used)) == -1) {
-    perror("setsockopt");
+   // perror("setsockopt");
     return;
   }
   setBind();
@@ -36,7 +36,7 @@ Server::Server(const char *portValue, const std::string &passwordValue) {
 void Server::setSocket(int socketFD) {
   _serverSocket = socketFD;
   if (_serverSocket == -1) {
-    perror("setSocket");
+   // perror("setSocket");
     return;
   }
 }
@@ -45,8 +45,8 @@ void Server::setBind(void) {
   _bindSocket = bind(_serverSocket, (struct sockaddr *)&serverAddr,
                      sizeof(struct sockaddr));
   if (_bindSocket == -1) {
-    perror("setBind");
-    exit(1);
+   // perror("setBind");
+    return ;
   }
 }
 
@@ -56,7 +56,7 @@ void Server::initAddr(void) {
   serverAddr.sin_port = htons(_serverPort);
   serverAddr.sin_addr.s_addr = INADDR_ANY;
   if (serverAddr.sin_addr.s_addr != 0) {
-    perror("initAddr");
+   // perror("initAddr");
     return;
   }
 }
@@ -64,7 +64,7 @@ void Server::initAddr(void) {
 void Server::listenSockets(void) {
   _listenSocket = listen(_serverSocket, BACKLOG);
   if (_listenSocket == -1) {
-    perror("Error while opening sockets");
+    //perror("Error while opening sockets");
     return;
   }
 }
@@ -79,12 +79,14 @@ void Server::prepareFDs(void) {
   maxfds = _serverSocket;
 }
 
-void Server::selectLoop(struct sockaddr_in _clientaddr) {
+void Server::selectLoop(struct sockaddr_in _clientaddr, bool *closedServer) {
   _selectfds = _masterfds;
   if (select(maxfds + 1, &_selectfds, NULL, NULL, NULL) == -1) {
-    perror("SELECT:");
+    // perror("SELECT:");
     return;
   }
+  if (*closedServer)
+    return ;
   for (int i = 0; i <= maxfds; i++) {
     if (FD_ISSET(i, &_selectfds)) {
       if (i == _serverSocket) {
@@ -96,14 +98,16 @@ void Server::selectLoop(struct sockaddr_in _clientaddr) {
           Client client(_clientfd);
           _Clients.push_back(client);
         } else
-          perror("accept error");
+          ;
+          //perror("accept error");
       } else {
         int numbytes = 0;
         if ((numbytes = recv(i, buf, sizeof(buf), MSG_DONTWAIT)) < 1) {
           if (errno == EAGAIN || errno == EWOULDBLOCK)
             continue;
           else {
-            perror("recv error");
+            ;
+            //perror("recv error");
             if (searchClient(i) != _Clients.end()) {
               disconnectClient(searchClient(i));
               return;
@@ -659,17 +663,14 @@ void Server::passwordFlag(std::vector<std::string> CMD, Client &client,
 //>> :Aurora.AfterNET.Org 324 test1 #a +
 //>> :Aurora.AfterNET.Org 329 test1 #a 1716325933
 std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
-  std::string flags, msg, ip = IP;
+  std::string flags = "", msg, ip = IP;
   std::vector<Channel>::iterator itChannel = searchChannel(CMD[1]);
   std::vector<Client>::iterator itClient =
-      itChannel->searchClient(client.getNick());
-  bool test = itChannel->getInvMode();
+      itChannel->searchClient(client.getNick());;
 
-  (void)test;
-  std::cout << itChannel->getInvMode() << std::endl;
   if (itChannel == _Channels.end()) return "";  // NOT FOUND
   if (itClient == _Clients.end()) return "";    // NOT FOUND
-  flags = '+';
+  flags += '+';
   if (itChannel->getInvMode()) flags += 'i';
   if (itChannel->getTopicMode()) flags += 't';
   if (itChannel->getPassword() != "") flags += 'k';

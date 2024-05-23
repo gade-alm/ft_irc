@@ -5,6 +5,7 @@
 # include "Client.hpp"
 
 # include <iostream>
+# include <signal.h>
 # include <cstdio>
 # include <cstdlib>
 # include <cstring>
@@ -38,7 +39,6 @@ class Server {
   int _serverPort;
   int _clientfd;
   std::string _password;
-
   fd_set _selectfds;
   fd_set _masterfds;
   std::vector<Client> _Clients;
@@ -64,7 +64,7 @@ class Server {
   void initAddr(void);
   void listenSockets(void);
   void prepareFDs(void);
-  void selectLoop( struct sockaddr_in _clientaddr );
+  void selectLoop( struct sockaddr_in _clientaddr, bool *closedServer );
   std::string prepReason(std::vector<std::string> CMD, int i);
   int getSocket(void);
 
@@ -84,7 +84,6 @@ class Server {
   void disconnectClient(std::vector<Client>::iterator it);
   void invite(std::vector<std::string> CMD, Client &client);
   void mode(std::vector<std::string> CMD, Client &client);
-
   void outOfChannels(Client& clients);
 
   ~Server();
