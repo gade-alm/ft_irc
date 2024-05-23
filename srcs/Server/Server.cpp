@@ -173,14 +173,14 @@ void Server::cmdHandler(std::string buffer, Client &client) {
   // std::cout << buffer << std::endl;
   std::vector<std::string> CMD = parseCMD(buffer);
   std::string cmd = buffer.substr(0, buffer.find(" "));
-  void (Server::*myCMDS[7])(std::vector<std::string>, Client &) = {
+  void (Server::*myCMDS[8])(std::vector<std::string>, Client &) = {
       &Server::joinChannel,  &Server::quitServer,
       &Server::deliveryMSG,  &Server::kickFromChannel,
       &Server::topicChannel, &Server::invite,
-      &Server::mode};
+      &Server::mode,         &Server::part};
   long unsigned int index;
-  std::string cmds[7] = {"JOIN",  "QUIT",   "PRIVMSG", "KICK",
-                         "TOPIC", "INVITE", "MODE"};
+  std::string cmds[8] = {"JOIN",  "QUIT",   "PRIVMSG", "KICK",
+                         "TOPIC", "INVITE", "MODE",    "PART"};
 
   for (index = 0; index < sizeof(cmds) / sizeof(cmds[0]); index++) {
     if (cmd == cmds[index]) break;
@@ -370,6 +370,17 @@ void Server::topicChannel(std::vector<std::string> CMD, Client &client) {
   }
 }
 
+void Server::part(std::vector<std::string> CMD, Client &client) {
+  std::vector<Channel>::iterator channel = searchChannel(CMD[1]);
+  std::string msg;
+
+  if (channel == _Channels.end() && CMD[2] == ":Leaving") return;
+  channel->rmUser(client);
+  msg = ':' + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + ' ' +
+        CMD[1];
+  sendMessage(msg, client.getFD());
+}
+
 // Invite Function
 void Server::invite(std::vector<std::string> CMD, Client &client) {
   std::vector<Client>::iterator destiny = searchClient(CMD[1]);
@@ -389,16 +400,19 @@ void Server::invite(std::vector<std::string> CMD, Client &client) {
   }
   verify = channel->searchClient(CMD[1]);
   if (CMD[1] != client.getNick() && verify == channel->endUsers())
-    channel->_invitation.push_back(client.getFD());
+    channel->_invitation.push_back(destiny->getFD());
   else {
     // Mensagem O usario se encontra no canal
     return;
   }
   // Ajeitar mensagem
-  msg = ":IRC341" + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] +
-        " " + CMD[1] + " " + CMD[2];
+  msg = ":" + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + " " +
+        CMD[1] + " " + CMD[2];
   sendMessage(msg, destiny->getFD());
-  // Adicionar mensagens para quem recebe o invite
+  // Adicionar mensagens para quem envia o invite
+  msg = ":IRC 341 " + client.getNick() + ' ' + destiny->getNick() + ' ' +
+        channel->getName();
+  sendMessage(msg, client.getFD());
 }
 
 /**********************
