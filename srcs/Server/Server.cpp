@@ -601,7 +601,7 @@ void Server::operatorFlag(std::vector<std::string> CMD, Client &client,
   bool mode;
 
   if (itChannel == _Channels.end()) return;  // NOT FOUND
-  itClient = itChannel->searchClient(client.getNick());
+  itClient = itChannel->searchClient(CMD[argsUsed]);
   if (itClient == _Clients.end()) return;  // NOT FOUND
   plus ? mode = true : mode = false;
   if (itClient->isOP() == mode) return;  // Mode already set
