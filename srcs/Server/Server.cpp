@@ -97,9 +97,9 @@ void Server::selectLoop(struct sockaddr_in _clientaddr, bool *closedServer) {
           if (_clientfd > maxfds) maxfds = _clientfd;
           Client client(_clientfd);
           _Clients.push_back(client);
-        } else
-          ;
-          //perror("accept error");
+        } else {
+            perror("accept error");
+          }
       } else {
         int numbytes = 0;
         if ((numbytes = recv(i, buf, sizeof(buf), MSG_DONTWAIT)) < 1) {
@@ -504,10 +504,14 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
       flag.first += CMD[i][j];
       itflag = searchFlagDiffSign(flags.begin(), flags.end(), flag.first[0],
                                   flag.first[1]);
-      if (itflag != flags.end()) flags.erase(itflag);
-      itflag = searchFlagEqSign(flags.begin(), flags.end(), flag.first[0],
-                                flag.first[1]);
-      if (itflag == flags.end()) flags.insert(flags.begin(), flag);
+      if (itflag != flags.end())
+        flags.erase(itflag);
+      else {
+        itflag = searchFlagEqSign(flags.begin(), flags.end(), flag.first[0],
+                                  flag.first[1]);
+        if (itflag == flags.end()) flags.insert(flags.begin(), flag);
+
+      }
     }
     indexSign = 0;
   }
