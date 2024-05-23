@@ -22,6 +22,9 @@ Server::Server(const char *portValue, const std::string &passwordValue) {
   }
   _serverPort = port;
   _password = passwordValue;
+  for (size_t i = 0; i < passwordValue.size(); i++) {
+    if (!isalnum(passwordValue[i])) exit (1);
+  }
   initAddr();
   setSocket(socket(serverAddr.sin_family, SOCK_STREAM, PROTOCOL));
   if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, &used,

@@ -107,8 +107,11 @@ bool Client::checkNick(std::string input, std::vector<Client> &Clients){
        		return false;
         }
 	}
-    _nickname = afterNick;
-    return true;
+  for (size_t i = 0; i < afterNick.size(); i++){
+    if (!isalnum(afterNick[i])) return false;
+  }
+  _nickname = afterNick;
+  return true;
 }
 
 bool Client::checkName(std::string input){
@@ -124,6 +127,9 @@ bool Client::checkName(std::string input){
     afterUser = input.substr(found + 5, end - (found + 5));
     if (!afterUser.empty() && afterUser[0] == ':')
         afterUser.erase(0, 1);
+  for (size_t i = 0; i < afterUser.size(); i++){
+    if (!isalnum(afterUser[i])) return false;
+  }
     _username = afterUser;
     return true;
 }
