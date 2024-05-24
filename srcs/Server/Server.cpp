@@ -172,7 +172,6 @@ void Server::disconnectClient(std::vector<Client>::iterator it) {
 void Server::cmdHandler(std::string buffer, Client &client) {
   // std::cout << buffer << std::endl;
   std::vector<std::string> CMD = parseCMD(buffer);
-  std::string cmd = buffer.substr(0, buffer.find(" "));
   void (Server::*myCMDS[7])(std::vector<std::string>, Client &) = {
       &Server::joinChannel,  &Server::quitServer,
       &Server::deliveryMSG,  &Server::kickFromChannel,
@@ -183,7 +182,7 @@ void Server::cmdHandler(std::string buffer, Client &client) {
                          "TOPIC", "INVITE", "MODE"};
 
   for (index = 0; index < sizeof(cmds) / sizeof(cmds[0]); index++) {
-    if (cmd == cmds[index]) break;
+    if (CMD[0] == cmds[index]) break;
   }
   if (index < sizeof(cmds) / sizeof(cmds[0]))
     (this->*myCMDS[index])(CMD, client);
