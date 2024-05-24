@@ -2,9 +2,6 @@
 #include "Client.hpp"
 #include <signal.h>
 
-// static void sigHandler( int signal ){
-// 	std::cout << "OPA" << signal << std::endl;
-// }
 
 int main ( int ac, char **av ) {
 

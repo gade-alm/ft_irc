@@ -1,0 +1,56 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-I",
+      "includes",
+      "-c",
+      "-o",
+      "objs/Client/Client.o",
+      "srcs/Client/Client.cpp"
+    ],
+    "directory": "/home/mtavares/irc",
+    "file": "/home/mtavares/irc/srcs/Client/Client.cpp",
+    "output": "/home/mtavares/irc/objs/Client/Client.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-I",
+      "includes",
+      "-c",
+      "-o",
+      "objs/Server/Server.o",
+      "srcs/Server/Server.cpp"
+    ],
+    "directory": "/home/mtavares/irc",
+    "file": "/home/mtavares/irc/srcs/Server/Server.cpp",
+    "output": "/home/mtavares/irc/objs/Server/Server.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c++98",
+      "-I",
+      "includes",
+      "-c",
+      "-o",
+      "objs/main.o",
+      "srcs/main.cpp"
+    ],
+    "directory": "/home/mtavares/irc",
+    "file": "/home/mtavares/irc/srcs/main.cpp",
+    "output": "/home/mtavares/irc/objs/main.o"
+  }
+]

@@ -1,7 +1,7 @@
-FILENAME = Client/Client.cpp \
+FILENAME =  Client/Client.cpp \
 			Server/Server.cpp \
 			Channel/Channel.cpp \
-					 main.cpp
+			main.cpp
 
 SRCS_DIR = srcs
 
@@ -15,7 +15,7 @@ DEPS = $(OBJS:.o=.d)
 
 CXX = c++
 
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I includes -fsanitize=address -g
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I includes -g -fsanitize=address
 
 NAME = ircserv
 
