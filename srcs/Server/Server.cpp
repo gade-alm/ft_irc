@@ -165,6 +165,7 @@ void Server::disconnectClient(std::vector<Client>::iterator it) {
   FD_CLR(client.getFD(), &_masterfds);
   std::string message = "You have been disconnected.";
   sendMessage(message, client.getFD());
+  outOfChannels(client);
   close(client.getFD());
   _Clients.erase(it);
 }
@@ -290,17 +291,23 @@ void Server::deliveryMSG(std::vector<std::string> CMD, Client &client) {
 
 void Server::kickFromChannel(std::vector<std::string> CMD, Client &client) {
   // :server_name KICK #channelname username :reason
-  std::string channelname = CMD[1];
-  std::string nick = CMD[2];
+  std::string channelname;
+  std::string nick;
+  if (CMD.size() < 3)
+    return ;
+  channelname = CMD[1];
+  nick = CMD[2];
   std::string reason = (CMD.size() >= 4) ? prepReason(CMD, 3) : "";
   std::vector<Channel>::iterator it = searchChannel(channelname);
   if (it == _Channels.end()) return;
   if (!it->searchClient(client.getNick())->isOP()) {
-    sendMessage("You dont have the rights to kick Users.", client.getFD());
+    std::string msg = ":IRC PRIVMSG " + channelname + " :You dont have the rights to kick Users. ";
+    sendMessage(msg, client.getFD());
     return;
   }
   if (it->searchClient(nick) == it->endUsers()) {
-    sendMessage("User not found.", client.getFD());
+    std::string msg = ":IRC PRIVMSG " + channelname + " :User not found.";
+    sendMessage(msg, client.getFD());
     return;
   }
   std::string cmd = ":" + client.getNick() + "!" + client.getUser() + " KICK " +
@@ -338,9 +345,12 @@ std::vector<std::string> Server::parseCMD(std::string buffer) {
   return CMD;
 }
 
-void Server::topicChannel(std::vector<std::string> CMD, Client &client) {
-  std::string channelName = CMD[1];
+void Server::topicChannel(std::vector<std::string> CMD, Client &client) {  
+  std::string channelName;
   std::vector<Channel>::iterator it = searchChannel(channelName);
+  if (CMD.size() < 2)
+    return ;
+  channelName = CMD[1];
   if (it == _Channels.end()) {
     // Mensagem de erro
     return;

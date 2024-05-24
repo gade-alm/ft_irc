@@ -5,6 +5,7 @@ Channel::Channel()
       _password(""),
       _topic(""),
       _topicneedop(true),
+      _inviteonly(false),
       _limit(false),
       _userlimit(0) {}
 
@@ -13,6 +14,7 @@ Channel::Channel(std::string name)
       _password(""),
       _topic(""),
       _topicneedop(true),
+      _inviteonly(false),
       _limit(false),
       _userlimit(0) {}
 
