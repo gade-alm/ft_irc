@@ -18,18 +18,15 @@ Server::Server(const char *portValue, const std::string &passwordValue) {
   int port = atoi(portValue);
   if (port < MINPORT || port > MAXPORT) {
     std::cout << ("Wrong number on port") << std::endl;
-    exit(1);
+    return;
   }
   _serverPort = port;
   _password = passwordValue;
-  for (size_t i = 0; i < passwordValue.size(); i++) {
-    if (!isalnum(passwordValue[i])) exit(1);
-  }
   initAddr();
   setSocket(socket(serverAddr.sin_family, SOCK_STREAM, PROTOCOL));
   if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, &used,
                  sizeof(used)) == -1) {
-    // perror("setsockopt");
+    perror("setsockopt");
     return;
   }
   setBind();
@@ -39,7 +36,7 @@ Server::Server(const char *portValue, const std::string &passwordValue) {
 void Server::setSocket(int socketFD) {
   _serverSocket = socketFD;
   if (_serverSocket == -1) {
-    // perror("setSocket");
+    perror("setSocket");
     return;
   }
 }
@@ -48,8 +45,8 @@ void Server::setBind(void) {
   _bindSocket = bind(_serverSocket, (struct sockaddr *)&serverAddr,
                      sizeof(struct sockaddr));
   if (_bindSocket == -1) {
-    // perror("setBind");
-    return;
+    perror("setBind");
+    exit(1);
   }
 }
 
@@ -59,7 +56,7 @@ void Server::initAddr(void) {
   serverAddr.sin_port = htons(_serverPort);
   serverAddr.sin_addr.s_addr = INADDR_ANY;
   if (serverAddr.sin_addr.s_addr != 0) {
-    // perror("initAddr");
+    perror("initAddr");
     return;
   }
 }
@@ -67,7 +64,7 @@ void Server::initAddr(void) {
 void Server::listenSockets(void) {
   _listenSocket = listen(_serverSocket, BACKLOG);
   if (_listenSocket == -1) {
-    // perror("Error while opening sockets");
+    perror("Error while opening sockets");
     return;
   }
 }
@@ -82,13 +79,12 @@ void Server::prepareFDs(void) {
   maxfds = _serverSocket;
 }
 
-void Server::selectLoop(struct sockaddr_in _clientaddr, bool *closedServer) {
+void Server::selectLoop(struct sockaddr_in _clientaddr) {
   _selectfds = _masterfds;
   if (select(maxfds + 1, &_selectfds, NULL, NULL, NULL) == -1) {
-    // perror("SELECT:");
+    perror("SELECT:");
     return;
   }
-  if (*closedServer) return;
   for (int i = 0; i <= maxfds; i++) {
     if (FD_ISSET(i, &_selectfds)) {
       if (i == _serverSocket) {
@@ -99,17 +95,15 @@ void Server::selectLoop(struct sockaddr_in _clientaddr, bool *closedServer) {
           if (_clientfd > maxfds) maxfds = _clientfd;
           Client client(_clientfd);
           _Clients.push_back(client);
-        } else {
+        } else
           perror("accept error");
-        }
       } else {
         int numbytes = 0;
         if ((numbytes = recv(i, buf, sizeof(buf), MSG_DONTWAIT)) < 1) {
           if (errno == EAGAIN || errno == EWOULDBLOCK)
             continue;
           else {
-            ;
-            // perror("recv error");
+            perror("recv error");
             if (searchClient(i) != _Clients.end()) {
               disconnectClient(searchClient(i));
               return;
@@ -179,14 +173,14 @@ void Server::cmdHandler(std::string buffer, Client &client) {
   // std::cout << buffer << std::endl;
   std::vector<std::string> CMD = parseCMD(buffer);
   std::string cmd = buffer.substr(0, buffer.find(" "));
-  void (Server::*myCMDS[8])(std::vector<std::string>, Client &) = {
+  void (Server::*myCMDS[7])(std::vector<std::string>, Client &) = {
       &Server::joinChannel,  &Server::quitServer,
       &Server::deliveryMSG,  &Server::kickFromChannel,
       &Server::topicChannel, &Server::invite,
-      &Server::mode,         &Server::part};
+      &Server::mode};
   long unsigned int index;
-  std::string cmds[8] = {"JOIN",  "QUIT",   "PRIVMSG", "KICK",
-                         "TOPIC", "INVITE", "MODE",    "PART"};
+  std::string cmds[7] = {"JOIN",  "QUIT",   "PRIVMSG", "KICK",
+                         "TOPIC", "INVITE", "MODE"};
 
   for (index = 0; index < sizeof(cmds) / sizeof(cmds[0]); index++) {
     if (cmd == cmds[index]) break;
@@ -197,8 +191,8 @@ void Server::cmdHandler(std::string buffer, Client &client) {
 
 void Server::joinChannel(std::vector<std::string> CMD, Client &client) {
   std::string channelname = CMD[1];
-  if (channelname[0] != '#') channelname = "#" + channelname;
 
+  if (channelname[0] != '#') channelname = "#" + channelname;
   if (!channelPrep(channelname, client, CMD)) {
     // INVALID MODE
     return;
@@ -236,12 +230,10 @@ bool Server::channelPrep(std::string channelname, Client &client, std::vector<st
                       itChannel->_invitation.end(), client.getFD());
     // std::cout << "CLIENT FD: " << client.getFD() << " "
     //           << itChannel->_invitation[0] << std::endl;
-    if (itChannel->getPassword() != "" && CMD.size() == 3 && itChannel->getPassword() != CMD[2]) {
-      //sendMessage("Wrong Password.", client.getFD());
+    if (itChannel->getPassword() != "" && CMD.size() != 3 && itChannel->getPassword() != CMD[2]) {
       return false;
     }
-    if (itChannel->getLimitMode() &&
-        itChannel->getLimit() <= itChannel->getUserOn().size()) {
+    if (itChannel->getLimitMode() && itChannel->getLimit() == itChannel->getUserOn().size()) {
       sendMessage("Channel is full.", client.getFD());
       return false;
     }
@@ -329,10 +321,12 @@ std::vector<std::string> Server::parseCMD(std::string buffer) {
   std::string word;
   std::vector<std::string> CMD;
 
-  while (start != buffer.size() - 2) {
+  while (start != buffer.size()) {
     end = buffer.find(" ", start);
     if (end == std::string::npos) {
-      end = buffer.find("\r", start);
+      (end != buffer.find("\r", start)) ? end = buffer.find("\r", start)
+                                        : end = buffer.find("\n", start);
+      if (start == end) break;
       word = buffer.substr(start, end - start);
       CMD.push_back(word);
       break;
@@ -340,7 +334,7 @@ std::vector<std::string> Server::parseCMD(std::string buffer) {
     }
     word = buffer.substr(start, end - start);
     CMD.push_back(word);
-    start = buffer.find_first_not_of(' ', end + 1);
+    start = end + 1;
   }
   return CMD;
 }
@@ -348,6 +342,10 @@ std::vector<std::string> Server::parseCMD(std::string buffer) {
 void Server::topicChannel(std::vector<std::string> CMD, Client &client) {
   std::string channelName = CMD[1];
   std::vector<Channel>::iterator it = searchChannel(channelName);
+  if (it == _Channels.end()) {
+    // Mensagem de erro
+    return;
+  }
   if (CMD.size() == 2) {
     if (it != _Channels.end()) {
       std::string topic = it->getTopic();
@@ -385,17 +383,6 @@ void Server::topicChannel(std::vector<std::string> CMD, Client &client) {
   }
 }
 
-void Server::part(std::vector<std::string> CMD, Client &client) {
-  std::vector<Channel>::iterator channel = searchChannel(CMD[1]);
-  std::string msg;
-
-  if (channel == _Channels.end() && CMD[2] == ":Leaving") return;
-  channel->rmUser(client);
-  msg = ':' + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + ' ' +
-        CMD[1];
-  sendMessage(msg, client.getFD());
-}
-
 // Invite Function
 void Server::invite(std::vector<std::string> CMD, Client &client) {
   std::vector<Client>::iterator destiny = searchClient(CMD[1]);
@@ -415,19 +402,16 @@ void Server::invite(std::vector<std::string> CMD, Client &client) {
   }
   verify = channel->searchClient(CMD[1]);
   if (CMD[1] != client.getNick() && verify == channel->endUsers())
-    channel->_invitation.push_back(destiny->getFD());
+    channel->_invitation.push_back(client.getFD());
   else {
     // Mensagem O usario se encontra no canal
     return;
   }
   // Ajeitar mensagem
-  msg = ":" + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + " " +
-        CMD[1] + " " + CMD[2];
+  msg = ":IRC341" + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] +
+        " " + CMD[1] + " " + CMD[2];
   sendMessage(msg, destiny->getFD());
-  // Adicionar mensagens para quem envia o invite
-  msg = ":IRC 341 " + client.getNick() + ' ' + destiny->getNick() + ' ' +
-        channel->getName();
-  sendMessage(msg, client.getFD());
+  // Adicionar mensagens para quem recebe o invite
 }
 
 /**********************
@@ -515,13 +499,10 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
       flag.first += CMD[i][j];
       itflag = searchFlagDiffSign(flags.begin(), flags.end(), flag.first[0],
                                   flag.first[1]);
-      if (itflag != flags.end())
-        flags.erase(itflag);
-      else {
-        itflag = searchFlagEqSign(flags.begin(), flags.end(), flag.first[0],
-                                  flag.first[1]);
-        if (itflag == flags.end()) flags.insert(flags.begin(), flag);
-      }
+      if (itflag != flags.end()) flags.erase(itflag);
+      itflag = searchFlagEqSign(flags.begin(), flags.end(), flag.first[0],
+                                flag.first[1]);
+      if (itflag == flags.end()) flags.insert(flags.begin(), flag);
     }
     indexSign = 0;
   }
@@ -608,14 +589,13 @@ void Server::operatorFlag(std::vector<std::string> CMD, Client &client,
   bool mode;
 
   if (itChannel == _Channels.end()) return;  // NOT FOUND
-  itClient = itChannel->searchClient(CMD[argsUsed]);
+  itClient = itChannel->searchClient(client.getNick());
   if (itClient == _Clients.end()) return;  // NOT FOUND
   plus ? mode = true : mode = false;
   if (itClient->isOP() == mode) return;  // Mode already set
   itClient->setOP(mode);
   msg = msgMode(CMD, client,
                 (plus == true) ? "+o " + CMD[argsUsed] : "-o " + CMD[argsUsed]);
-  sendMessage(msg, itClient->getFD());
   sendMessage(msg, client.getFD());
 }
 
@@ -678,15 +658,17 @@ void Server::passwordFlag(std::vector<std::string> CMD, Client &client,
 //>> :Aurora.AfterNET.Org 324 test1 #a +
 //>> :Aurora.AfterNET.Org 329 test1 #a 1716325933
 std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
-  std::string flags = "", msg, ip = IP;
+  std::string flags, msg, ip = IP;
   std::vector<Channel>::iterator itChannel = searchChannel(CMD[1]);
   std::vector<Client>::iterator itClient =
       itChannel->searchClient(client.getNick());
-  ;
+  bool test = itChannel->getInvMode();
 
+  (void)test;
+  std::cout << itChannel->getInvMode() << std::endl;
   if (itChannel == _Channels.end()) return "";  // NOT FOUND
   if (itClient == _Clients.end()) return "";    // NOT FOUND
-  flags += '+';
+  flags = '+';
   if (itChannel->getInvMode()) flags += 'i';
   if (itChannel->getTopicMode()) flags += 't';
   if (itChannel->getPassword() != "") flags += 'k';
