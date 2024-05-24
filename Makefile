@@ -15,7 +15,7 @@ DEPS = $(OBJS:.o=.d)
 
 CXX = c++
 
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I includes -g -fsanitize=address
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I includes -g #-fsanitize=address
 
 NAME = ircserv
 
