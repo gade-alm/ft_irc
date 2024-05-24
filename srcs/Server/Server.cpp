@@ -199,7 +199,7 @@ void Server::joinChannel(std::vector<std::string> CMD, Client &client) {
   std::string channelname = CMD[1];
   if (channelname[0] != '#') channelname = "#" + channelname;
 
-  if (!channelPrep(channelname, client)) {
+  if (!channelPrep(channelname, client, CMD)) {
     // INVALID MODE
     return;
   }
@@ -226,7 +226,7 @@ void Server::quitServer(std::vector<std::string> CMD, Client &client) {
   disconnectClient(it);
 }
 
-bool Server::channelPrep(std::string channelname, Client &client) {
+bool Server::channelPrep(std::string channelname, Client &client, std::vector<std::string> CMD) {
   std::vector<Channel>::iterator itChannel = searchChannel(channelname);
   std::vector<int>::iterator itInv;
 
@@ -236,6 +236,15 @@ bool Server::channelPrep(std::string channelname, Client &client) {
                       itChannel->_invitation.end(), client.getFD());
     // std::cout << "CLIENT FD: " << client.getFD() << " "
     //           << itChannel->_invitation[0] << std::endl;
+    if (itChannel->getPassword() != "" && CMD.size() == 3 && itChannel->getPassword() != CMD[2]) {
+      //sendMessage("Wrong Password.", client.getFD());
+      return false;
+    }
+    if (itChannel->getLimitMode() &&
+        itChannel->getLimit() <= itChannel->getUserOn().size()) {
+      sendMessage("Channel is full.", client.getFD());
+      return false;
+    }
     if (itChannel->getInvMode() && itInv == itChannel->_invitation.end()) {
       return false;
     }

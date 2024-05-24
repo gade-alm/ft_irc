@@ -53,7 +53,7 @@ bool Channel::getInvMode() const { return _inviteonly; }
 
 void Channel::setLimit(long limit) { _userlimit = limit; }
 
-long Channel::getLimit() const { return _userlimit; }
+size_t Channel::getLimit() const { return _userlimit; }
 
 void Channel::setLimitMode(bool mode) { _limit = mode; }
 

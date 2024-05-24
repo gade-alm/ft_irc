@@ -44,7 +44,7 @@ class Channel {
   bool getInvMode() const;
 
   void setLimit(long limit);
-  long getLimit() const;
+  size_t getLimit() const;
 
   void setLimitMode(bool mode);
   bool getLimitMode() const;
