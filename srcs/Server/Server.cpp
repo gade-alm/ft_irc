@@ -393,10 +393,12 @@ void Server::topicChannel(std::vector<std::string> CMD, Client &client) {
 }
 
 void Server::part(std::vector<std::string> CMD, Client &client) {
-  std::vector<Channel>::iterator channel = searchChannel(CMD[1]);
+  std::vector<Channel>::iterator channel;
   std::string msg;
 
-  if (channel == _Channels.end() && CMD[2] == ":Leaving") return;
+  if (CMD.size() != 3) return;
+  channel = searchChannel(CMD[1]);
+  if (channel == _Channels.end() || CMD[2] == ":Leaving") return;
   channel->rmUser(client);
   msg = ':' + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + ' ' +
         CMD[1];
