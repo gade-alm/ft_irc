@@ -74,6 +74,7 @@ class Server {
   void deliveryMSG(std::vector<std::string> CMD, Client &client);
   void kickFromChannel(std::vector<std::string> CMD, Client &client);
   void topicChannel(std::vector<std::string> CMD, Client &client);
+  void part(std::vector<std::string> CMD, Client &client);
   bool channelPrep(std::string channelname, Client &client, std::vector<std::string> CMD);
 
   std::vector<Client>::iterator searchClient(int fd);
