@@ -606,12 +606,13 @@ void Server::topicFlag(std::vector<std::string> CMD, Client &client, bool plus,
 void Server::operatorFlag(std::vector<std::string> CMD, Client &client,
                           bool plus, size_t argsUsed) {
   std::string channel, msg;
-  std::vector<Channel>::iterator itChannel = searchChannel(channel);
+  std::vector<Channel>::iterator itChannel;
   std::vector<Client>::iterator itClient;
   bool mode;
 
   if (CMD.size() < 3) return;
   channel = CMD[1];
+  itChannel = searchChannel(channel);
   if (itChannel == _Channels.end()) return;  // NOT FOUND
   itClient = itChannel->searchClient(CMD[argsUsed]);
   if (itClient == _Clients.end()) return;  // NOT FOUND
@@ -649,10 +650,12 @@ void Server::userLimitFlag(std::vector<std::string> CMD, Client &client,
 
 void Server::passwordFlag(std::vector<std::string> CMD, Client &client,
                           bool plus, size_t argsUsed) {
-  std::string channel = CMD[1], msg;
+  std::string channel, msg;
   std::vector<Channel>::iterator itChannel = searchChannel(channel);
   std::vector<Client>::iterator itClient;
 
+  if (CMD.size() != 3) return;
+  channel = CMD[1];
   itClient = itChannel->searchClient(client.getNick());
   if (itClient == itChannel->endUsers()) return;  // User Not Found
   if (!itClient->isOP()) return;                  // Not OP
