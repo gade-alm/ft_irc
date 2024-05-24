@@ -603,8 +603,8 @@ void Server::topicFlag(std::vector<std::string> CMD, Client &client, bool plus,
   bool mode;
 
   (void)argsUsed;
-  channel = CMD[1];
   if (CMD.size() != 3) return;
+  channel = CMD[1];
   if (itChannel == _Channels.end()) return;
   plus ? mode = true : mode = false;
   if (itChannel->getTopicMode() == mode) return;
@@ -636,13 +636,14 @@ void Server::operatorFlag(std::vector<std::string> CMD, Client &client,
 
 void Server::userLimitFlag(std::vector<std::string> CMD, Client &client,
                            bool plus, size_t argsUsed) {
-  std::string channel = CMD[1], msg;
+  std::string channel, msg;
   std::stringstream parameter;
   std::vector<Channel>::iterator itChannel = searchChannel(channel);
   bool mode;
   int limit;
 
   if (CMD.size() != 3 && CMD.size() != 2) return;
+  channel = CMD[1];
   if (itChannel == _Channels.end()) return;  // NOT FOUND
   plus ? mode = true : mode = false;
   if (itChannel->getLimitMode() == mode) return;  // NOT FOUND
