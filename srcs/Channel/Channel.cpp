@@ -104,3 +104,7 @@ void Channel::printUsers() {
 }
 
 void Channel::removeUser(int value) { _Users.erase(searchClient(value)); }
+
+bool Channel::clientIsHere(int fd){
+  return (searchClient(fd) != _Users.end()) ? true : false;
+}

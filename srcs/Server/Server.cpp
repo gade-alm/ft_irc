@@ -183,7 +183,7 @@ void Server::cmdHandler(std::string buffer, Client &client) {
                          "TOPIC", "INVITE", "MODE",    "PART"};
 
   for (index = 0; index < sizeof(cmds) / sizeof(cmds[0]); index++) {
-    if (CMD[0] == cmds[index]) break;
+    if (!CMD.empty() && CMD[0] == cmds[index]) break;
   }
   if (index < sizeof(cmds) / sizeof(cmds[0]))
     (this->*myCMDS[index])(CMD, client);
@@ -285,6 +285,7 @@ void Server::deliveryMSG(std::vector<std::string> CMD, Client &client) {
 
   std::vector<Channel>::iterator itChannel = searchChannel(channelname);
   if (itChannel == _Channels.end()) return;
+  if (!itChannel->clientIsHere(client.getFD())) return;
   for (std::vector<Client>::iterator itClient = itChannel->beginUsers();
        itClient != itChannel->endUsers(); itClient++) {
     if (itClient->getFD() != client.getFD())
@@ -350,13 +351,10 @@ std::vector<std::string> Server::parseCMD(std::string buffer) {
 
 void Server::topicChannel(std::vector<std::string> CMD, Client &client) {
   std::string channelName;
-  std::vector<Channel>::iterator it = searchChannel(channelName);
   if (CMD.size() < 2) return;
   channelName = CMD[1];
-  if (it == _Channels.end()) {
-    // Mensagem de erro
-    return;
-  }
+  std::vector<Channel>::iterator it = searchChannel(channelName);
+
   if (CMD.size() == 2) {
     if (it != _Channels.end()) {
       std::string topic = it->getTopic();
@@ -400,7 +398,7 @@ void Server::part(std::vector<std::string> CMD, Client &client) {
 
   if (CMD.size() != 3) return;
   channel = searchChannel(CMD[1]);
-  if (channel == _Channels.end() || CMD[2] == ":Leaving") return;
+  if (channel == _Channels.end() || CMD[2] != ":Leaving") return;
   channel->rmUser(client);
   msg = ':' + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + ' ' +
         CMD[1];

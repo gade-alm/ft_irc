@@ -59,6 +59,7 @@ class Channel {
   std::vector<int> _invitation;
 
   void printUsers();
+  bool clientIsHere(int fd);
 };
 
 #endif
