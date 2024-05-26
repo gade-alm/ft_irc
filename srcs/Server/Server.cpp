@@ -5,6 +5,8 @@
 #include <sstream>
 #include <string>
 
+static void checkPassword(std::string password);
+
 Server::Server(void) {}
 
 Server::Server(const Server &) {}
@@ -18,10 +20,11 @@ Server::Server(const char *portValue, const std::string &passwordValue) {
   int port = atoi(portValue);
   if (port < MINPORT || port > MAXPORT) {
     std::cout << ("Wrong number on port") << std::endl;
-    return;
+    exit(1);
   }
   _serverPort = port;
   _password = passwordValue;
+  checkPassword(passwordValue);
   initAddr();
   setSocket(socket(serverAddr.sin_family, SOCK_STREAM, PROTOCOL));
   if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, &used,
@@ -736,4 +739,18 @@ void Server::outOfChannels(Client &clients) {
       if (ic->getFD() == clients.getFD()) it->removeUser(ic->getFD());
     }
   }
+}
+
+static void checkPassword( std::string password ){
+  if (password.empty()) {
+    std::cerr << "Password is empty" << std::endl;
+    exit (1);
+  }
+  for (size_t i = 0; i < password.size(); i++){
+    if (isspace(password[i])){
+      std::cerr << "Password has spaces" << std::endl;
+      exit (1);
+    }
+  }
+  return ;
 }
