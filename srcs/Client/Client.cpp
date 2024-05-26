@@ -7,7 +7,8 @@ Client::Client(int fd)
       _username(""),
       _operator(false),
       _clientfd(fd),
-      _authenticated(false) {}
+      _authenticated(false),
+      _registred (false) {}
 
 Client::~Client() {}
 

@@ -358,6 +358,7 @@ void Server::topicChannel(std::vector<std::string> CMD, Client &client) {
   channelName = CMD[1];
   std::vector<Channel>::iterator it = searchChannel(channelName);
 
+  if (it == _Channels.end()) return ;
   if (CMD.size() == 2) {
     if (it != _Channels.end()) {
       std::string topic = it->getTopic();
