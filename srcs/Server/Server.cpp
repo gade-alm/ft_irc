@@ -154,7 +154,7 @@ std::vector<Client>::iterator Server::searchClient(std::string name) {
 
 std::vector<Channel>::iterator Server::searchChannel(std::string channelname) {
   std::vector<Channel>::iterator it;
-
+  if (channelname[0] != '#') channelname = "#" + channelname;
   for (it = _Channels.begin(); it != _Channels.end(); ++it) {
     if (it->getName() == channelname) {
       break;
@@ -193,8 +193,8 @@ void Server::cmdHandler(std::string buffer, Client &client) {
 }
 
 void Server::joinChannel(std::vector<std::string> CMD, Client &client) {
+  if (CMD.size() < 2) return;
   std::string channelname = CMD[1];
-
   if (channelname[0] != '#') channelname = "#" + channelname;
   if (!channelPrep(channelname, client, CMD)) {
     // INVALID MODE
@@ -299,14 +299,17 @@ void Server::deliveryMSG(std::vector<std::string> CMD, Client &client) {
 void Server::kickFromChannel(std::vector<std::string> CMD, Client &client) {
   // :server_name KICK #channelname username :reason
   std::string channelname;
+  if (channelname[0] != '#') channelname = "#" + channelname;
   std::string nick;
   if (CMD.size() < 3) return;
   channelname = CMD[1];
   nick = CMD[2];
   std::string reason = (CMD.size() >= 4) ? prepReason(CMD, 3) : "";
+
   std::vector<Channel>::iterator it = searchChannel(channelname);
   if (it == _Channels.end()) return;
-  if (!it->searchClient(client.getNick())->isOP()) {
+  if (it->searchClient(client.getNick()) == it->endUsers() || \
+     !it->searchClient(client.getNick())->isOP()) {
     std::string msg = ":IRC PRIVMSG " + channelname +
                       " :You dont have the rights to kick Users. ";
     sendMessage(msg, client.getFD());
@@ -411,33 +414,30 @@ void Server::part(std::vector<std::string> CMD, Client &client) {
 
 // Invite Function
 void Server::invite(std::vector<std::string> CMD, Client &client) {
+  if (CMD.size() < 3) return;
   std::vector<Client>::iterator destiny = searchClient(CMD[1]);
   std::vector<Channel>::iterator channel = searchChannel(CMD[2]);
   std::vector<Client>::iterator verify;
   std::string msg;
 
-  if (channel == _Channels.end()) {
-    // Mensagem de erro
-    return;
-  }
+  if (destiny == _Clients.end()) return;
+  if (channel == _Channels.end()) return;
   verify = std::find(channel->beginUsers(), channel->endUsers(), client);
-  if (destiny == _Clients.end() && verify->isOP()) {
+  if (verify == channel->endUsers()) return;
+  if (!verify->isOP()) {
     std::string msg = ":IRC 482 " + client.getNick() + " " +
                       channel->getName() + " :You're not channel operator\r\n";
     return;
   }
   verify = channel->searchClient(CMD[1]);
-  if (CMD[1] != client.getNick() && verify == channel->endUsers())
-    channel->_invitation.push_back(client.getFD());
-  else {
-    // Mensagem O usario se encontra no canal
-    return;
-  }
-  // Ajeitar mensagem
-  msg = ":IRC341" + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] +
-        " " + CMD[1] + " " + CMD[2];
+  if (CMD[1] == client.getNick() || verify != channel->endUsers()) return;
+  channel->_invitation.push_back(destiny->getFD());
+
+  msg = ":" + client.getNick() + "!~" + client.getUser() + " INVITE " + destiny->getNick() + " :" + CMD[2];
   sendMessage(msg, destiny->getFD());
-  // Adicionar mensagens para quem recebe o invite
+
+  msg = ":IRC 341 " + client.getNick() + " " + destiny->getNick() + " " + CMD[2];
+  sendMessage(msg, client.getFD());
 }
 
 /**********************
