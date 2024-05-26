@@ -1,8 +1,9 @@
 #ifndef SERVER_HPP
-# define SERVER_HPP
+#define SERVER_HPP
 
 # include "Channel.hpp"
 # include "Client.hpp"
+
 # include <iostream>
 # include <cstdio>
 # include <cstdlib>
@@ -18,61 +19,75 @@
 # include <sys/select.h>
 # include <errno.h>
 
-# define MINPORT 1024
-# define MAXPORT 65535
-# define BACKLOG 10
-# define IP "127.0.0.1"
-# define BOSS "SOU MAQUINA"
-# define PROTOCOL 0
-# define MAXUSERS 24
+#define MINPORT 1024
+#define MAXPORT 65535
+#define BACKLOG 10
+#define IP "127.0.0.1"
+#define PROTOCOL 0
+#define MAXUSERS 24
 
 class Server {
-	private:
-		Server( const Server& );
-		Server();
+ private:
+  Server(const Server &);
+  Server();
 
-		int	_serverSocket;
-		int	_listenSocket;
-		int	_bindSocket;
+  int _serverSocket;
+  int _listenSocket;
+  int _bindSocket;
 
-		int	_serverPort;
-		int _clientfd;
-		std::string _password;
+  int _serverPort;
+  int _clientfd;
+  std::string _password;
 
-		fd_set	_selectfds;
-		fd_set	_masterfds;
-		std::vector<Client> _Clients;
-		std::vector<Channel> _Channels;
-		std::vector<std::string> parseCMD(std::string buffer);
+  fd_set _selectfds;
+  fd_set _masterfds;
+  std::vector<Client> _Clients;
+  std::vector<Channel> _Channels;
+  std::vector<std::string> parseCMD(std::string buffer);
 
+ public:
+  int maxfds;
+  char buf[1024];
+  sockaddr_in serverAddr;
+  Server(const char *portValue, const std::string &passwordValue);
 
-	public:
-		int		maxfds;
-		char	buf[1024];
-		sockaddr_in serverAddr;
-		Server( const char* portValue, const std::string &passwordValue );
+  void inviteOnly(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
+  void topicFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
+  void operatorFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
+  void userLimitFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
+  void passwordFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
+  std::string printArgs(std::vector<std::string> CMD, Client &client);
+  std::string msgMode(std::vector<std::string> CMD, Client client, std::string parameter);
 
-		void	setSocket ( int socketFd );
-		void	setBind( void );
-		void	initAddr ( void );
-		void	listenSockets( void );
-		void	prepareFDs( void );
-		std::string prepReason(std::vector<std::string> CMD, int i);
-		void	selectLoop( struct sockaddr_in _clientaddr );
-		int		getSocket( void );
-		void	cmdHandler(std::string buffer, Client &client);
-		void	joinChannel(std::vector<std::string> CMD, Client &client);
-		void	quitServer(std::vector<std::string> CMD, Client &client);
-		void	deliveryMSG(std::vector<std::string> CMD, Client &client);
-		void	kickFromChannel(std::vector<std::string> CMD, Client &client);
-		void	topicChannel(std::vector<std::string> CMD, Client &client);
-		void	channelPrep(std::string channelname, Client &client);
-		std::vector<Client>::iterator searchClient(int fd);
-		std::vector<Client>::iterator searchClient(std::string name);
-		std::vector<Channel>::iterator searchChannel(std::string channelname);
-		void disconnectClient(std::vector<Client>::iterator it);
+  void setSocket(int socketFd);
+  void setBind(void);
+  void initAddr(void);
+  void listenSockets(void);
+  void prepareFDs(void);
+  void selectLoop( struct sockaddr_in _clientaddr);
+  std::string prepReason(std::vector<std::string> CMD, int i);
+  int getSocket(void);
 
-		~Server();
+  void cmdHandler(std::string buffer, Client &client);
+  void joinChannel(std::vector<std::string> CMD, Client &client);
+  void quitServer(std::vector<std::string> CMD, Client &client);
+  void deliveryMSG(std::vector<std::string> CMD, Client &client);
+  void kickFromChannel(std::vector<std::string> CMD, Client &client);
+  void topicChannel(std::vector<std::string> CMD, Client &client);
+  void part(std::vector<std::string> CMD, Client &client);
+  bool channelPrep(std::string channelname, Client &client, std::vector<std::string> CMD);
+
+  std::vector<Client>::iterator searchClient(int fd);
+  std::vector<Client>::iterator searchClient(std::string name);
+  std::vector<Channel>::iterator searchChannel(std::string channelname);
+
+  void disconnectClient(std::vector<Client>::iterator it);
+  void invite(std::vector<std::string> CMD, Client &client);
+  void mode(std::vector<std::string> CMD, Client &client);
+
+  void outOfChannels(Client& clients);
+
+  ~Server();
 };
 
 #endif
