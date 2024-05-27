@@ -491,6 +491,7 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
   //   std::cout << "TESTE" << std::endl;
   //   return;  // Channel doesn't exist
   // }
+  if (CMD.size() < 2) return;
   if (CMD.size() == 2) {
     printArgs(CMD, client);
     return;
@@ -512,6 +513,7 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
           inviteOnly(CMD, client, flag);
           break;
         case 'o':
+          operatorFlag(CMD, client, flag, i);
           std::cout << "ACHEI O O" << std::endl;
           break;
         case 't':
@@ -617,20 +619,22 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
 
 void Server::inviteOnly(std::vector<std::string> CMD, Client &client, char flag) {
   std::string channel, msg;
-  std::vector<Channel>::iterator itChannel = searchChannel(channel);
+  std::vector<Channel>::iterator itChannel;
+  std::vector<Client>::iterator itClient;
   bool mode;
 
   // if (CMD.size() != 3 ) return;
   channel = CMD[1];
-  // if (itChannel == _Channels.end()) return;
-  if (flag == '+')
-    mode = true;
-  else
-    mode = false;
-  if (itChannel->getInvMode() == mode) return;
+  itChannel = searchChannel(channel);
+  if (itChannel == _Channels.end()) return;
+  itClient = itChannel->searchClient(client.getFD());
+  if (itClient == itChannel->endUsers()) return;
+  (flag == '+') ? mode = true : mode = false;
+  if (!itClient->isOP() || itChannel->getInvMode() == mode) return;
   itChannel->setInvMode(mode);
-  msg = ":IRC 354 " + client.getNick() +  " 152 " + channel + client.getNick();
-  sendMessage(msg, client.getFD());
+  msg = (":" + client.getNick() + "!" + client.getUser() + " " + "MODE " + channel + " " + flag + 'i');
+  sendToAll(msg, itChannel);
+  //std::cout << "INVITE ONLY: " << itChannel->getInvMode() << std::endl;
 }
 
 void Server::topicFlag(std::vector<std::string> CMD, Client &client, bool plus,
@@ -651,24 +655,27 @@ void Server::topicFlag(std::vector<std::string> CMD, Client &client, bool plus,
 }
 
 void Server::operatorFlag(std::vector<std::string> CMD, Client &client,
-                          bool plus, size_t argsUsed) {
-  std::string channel, msg;
+                          char signal, size_t index) {
+  std::string msg;
   std::vector<Channel>::iterator itChannel;
   std::vector<Client>::iterator itClient;
+  std::vector<Client>::iterator User;
   bool mode;
 
-  if (CMD.size() < 3) return;
-  channel = CMD[1];
-  itChannel = searchChannel(channel);
+  if (CMD.size() < index + 2) return; // Not enough arguments
+  itChannel = searchChannel(CMD[1]);
   if (itChannel == _Channels.end()) return;  // NOT FOUND
-  itClient = itChannel->searchClient(CMD[argsUsed]);
-  if (itClient == _Clients.end()) return;  // NOT FOUND
-  plus ? mode = true : mode = false;
-  if (itClient->isOP() == mode) return;  // Mode already set
+  itClient = itChannel->searchClient(CMD[index + 1]);
+  if (itClient == itChannel->endUsers()) return;  // NOT FOUND
+  User = itChannel->searchClient(client.getFD());
+  if (User == itChannel->endUsers()) return;  // User not in channel
+  signal == '+' ? mode = true : mode = false;
+  //std::cout << "OP: " << itClient->isOP() << " " << User->isOP()  << " " << mode << std::endl;
+  if (!User->isOP() || itClient->isOP() == mode) return;  // Mode already set or client dont have OP
   itClient->setOP(mode);
   msg = msgMode(CMD, client,
-                (plus == true) ? "+o " + CMD[argsUsed] : "-o " + CMD[argsUsed]);
-  sendMessage(msg, client.getFD());
+                (mode == true) ? "+o " + CMD[index + 1] : "-o " + CMD[index + 1]);
+  sendToAll(msg, itChannel);
 }
 
 void Server::userLimitFlag(std::vector<std::string> CMD, Client &client,
@@ -789,4 +796,11 @@ static void checkPassword( std::string password ){
     }
   }
   return ;
+}
+
+void Server::sendToAll(std::string message, std::vector<Channel>::iterator itChannel) {
+  for (std::vector<Client>::iterator it = itChannel->beginUsers();
+       it != itChannel->endUsers(); it++) {
+    sendMessage(message, it->getFD());
+  }
 }
