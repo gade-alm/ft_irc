@@ -51,10 +51,10 @@ class Server {
   sockaddr_in serverAddr;
   Server(const char *portValue, const std::string &passwordValue);
 
-  void inviteOnly(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
-  void topicFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
-  void operatorFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
-  void userLimitFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
+  void inviteOnly(std::vector<std::string> CMD, Client &client, char flag);
+  void topicFlag(std::vector<std::string> CMD, Client &client, char flag);
+  void operatorFlag(std::vector<std::string> CMD, Client &client, char signal, size_t index);
+  void userLimitFlag(std::vector<std::string> CMD, Client &client, char signal, size_t index);
   void passwordFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
   std::string printArgs(std::vector<std::string> CMD, Client &client);
   std::string msgMode(std::vector<std::string> CMD, Client client, std::string parameter);
@@ -64,7 +64,7 @@ class Server {
   void initAddr(void);
   void listenSockets(void);
   void prepareFDs(void);
-  void selectLoop( struct sockaddr_in _clientaddr );
+  void selectLoop( struct sockaddr_in _clientaddr);
   std::string prepReason(std::vector<std::string> CMD, int i);
   int getSocket(void);
 
@@ -74,6 +74,7 @@ class Server {
   void deliveryMSG(std::vector<std::string> CMD, Client &client);
   void kickFromChannel(std::vector<std::string> CMD, Client &client);
   void topicChannel(std::vector<std::string> CMD, Client &client);
+  void part(std::vector<std::string> CMD, Client &client);
   bool channelPrep(std::string channelname, Client &client, std::vector<std::string> CMD);
 
   std::vector<Client>::iterator searchClient(int fd);
@@ -85,6 +86,7 @@ class Server {
   void mode(std::vector<std::string> CMD, Client &client);
 
   void outOfChannels(Client& clients);
+  void sendToAll(std::string message, std::vector<Channel>::iterator channel);
 
   ~Server();
 };

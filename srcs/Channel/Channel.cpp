@@ -5,6 +5,7 @@ Channel::Channel()
       _password(""),
       _topic(""),
       _topicneedop(true),
+      _inviteonly(false),
       _limit(false),
       _userlimit(0) {}
 
@@ -13,6 +14,7 @@ Channel::Channel(std::string name)
       _password(""),
       _topic(""),
       _topicneedop(true),
+      _inviteonly(false),
       _limit(false),
       _userlimit(0) {}
 
@@ -101,6 +103,8 @@ void Channel::printUsers() {
   }
 }
 
-void  Channel::removeUser(int value) {
-  _Users.erase(searchClient(value));
+void Channel::removeUser(int value) { _Users.erase(searchClient(value)); }
+
+bool Channel::clientIsHere(int fd){
+  return (searchClient(fd) != _Users.end()) ? true : false;
 }
