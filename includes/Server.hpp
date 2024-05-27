@@ -1,5 +1,5 @@
 #ifndef SERVER_HPP
-#define SERVER_HPP
+# define SERVER_HPP
 
 # include "Channel.hpp"
 # include "Client.hpp"
@@ -51,7 +51,7 @@ class Server {
   sockaddr_in serverAddr;
   Server(const char *portValue, const std::string &passwordValue);
 
-  void inviteOnly(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
+  void inviteOnly(std::vector<std::string> CMD, Client &client, char flag);
   void topicFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
   void operatorFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
   void userLimitFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);

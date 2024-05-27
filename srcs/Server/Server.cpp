@@ -443,25 +443,25 @@ void Server::invite(std::vector<std::string> CMD, Client &client) {
 /**********************
  * Auxiliar Functions *
  **********************/
-std::vector<std::pair<std::string, size_t> >::iterator searchFlagDiffSign(
-    std::vector<std::pair<std::string, size_t> >::iterator begin,
-    std::vector<std::pair<std::string, size_t> >::iterator end, char option,
-    char flag) {
-  for (; begin != end; begin++) {
-    if (begin->first[0] != option && begin->first[1] == flag) return begin;
-  }
-  return begin;
-}
+// std::vector<std::pair<std::string, size_t> >::iterator searchFlagDiffSign(
+//     std::vector<std::pair<std::string, size_t> >::iterator begin,
+//     std::vector<std::pair<std::string, size_t> >::iterator end, char option,
+//     char flag) {
+//   for (; begin != end; begin++) {
+//     if (begin->first[0] != option && begin->first[1] == flag) return begin;
+//   }
+//   return begin;
+// }
 
-std::vector<std::pair<std::string, size_t> >::iterator searchFlagEqSign(
-    std::vector<std::pair<std::string, size_t> >::iterator begin,
-    std::vector<std::pair<std::string, size_t> >::iterator end, char option,
-    char flag) {
-  for (; begin != end; begin++) {
-    if (begin->first[0] == option && begin->first[1] == flag) return begin;
-  }
-  return begin;
-}
+// std::vector<std::pair<std::string, size_t> >::iterator searchFlagEqSign(
+//     std::vector<std::pair<std::string, size_t> >::iterator begin,
+//     std::vector<std::pair<std::string, size_t> >::iterator end, char option,
+//     char flag) {
+//   for (; begin != end; begin++) {
+//     if (begin->first[0] == option && begin->first[1] == flag) return begin;
+//   }
+//   return begin;
+// }
 
 /*********************************************
  * Mode function has 5 flags                 *
@@ -476,77 +476,111 @@ std::vector<std::pair<std::string, size_t> >::iterator searchFlagEqSign(
  ********************************************/
 
 void Server::mode(std::vector<std::string> CMD, Client &client) {
-  std::string cmds = "itkol";
-  void (Server::*myCMDS[5])(std::vector<std::string>, Client &, bool,
-                            size_t) = {
-      &Server::inviteOnly, &Server::topicFlag, &Server::passwordFlag,
-      &Server::operatorFlag, &Server::userLimitFlag};
-  std::vector<std::pair<std::string, size_t> >::iterator itflag;
-  std::vector<std::pair<std::string, size_t> > flags;
-  std::pair<std::string, size_t> flag;
-  size_t numArgs = 0, indexArgs = 2, indexSign = 0;
+  // std::string cmds = "itkol";
+  // void (Server::*myCMDS[5])(std::vector<std::string>, Client &, bool,
+  //                           size_t) = {
+  //     &Server::inviteOnly, &Server::topicFlag, &Server::passwordFlag,
+  //     &Server::operatorFlag, &Server::userLimitFlag};
+  // std::vector<std::pair<std::string, size_t> >::iterator itflag;
+  // std::vector<std::pair<std::string, size_t> > flags;
+  // std::pair<std::string, size_t> flag;
+  // size_t numArgs = 0, indexArgs = 2, indexSign = 0;
 
   // Com dois argumentos printar as permissoes
-  if (CMD.size() > 1 && searchChannel(CMD[1]) == _Channels.end())
-    return;  // Channel doesn't exist
+  // if (CMD.size() > 1 && searchChannel(CMD[1]) == _Channels.end()){
+  //   std::cout << "TESTE" << std::endl;
+  //   return;  // Channel doesn't exist
+  // }
   if (CMD.size() == 2) {
     printArgs(CMD, client);
     return;
   }
+  size_t i = 0;
+  char flag;
+  for (; i < CMD.size(); i++){
+    if (CMD[i][0] == '-' || CMD[i][0] == '+')
+    {
+      flag = CMD[i][0];
+      break ;
+    }
+  }
+  for (size_t j = 1; j < CMD[i].size(); j++) {
+    if (CMD[i][j])
+      switch (CMD[i][j])
+      {
+        case 'i':
+          inviteOnly(CMD, client, flag);
+          break;
+        case 'o':
+          std::cout << "ACHEI O O" << std::endl;
+          break;
+        case 't':
+          std::cout << "ACHEI O T" << std::endl;
+          break;
+        case 'k':
+          std::cout << "ACHEI O K" << std::endl;
+          break;
+        case 'l':
+          std::cout << "ACHEI O L" << std::endl;
+          break;
+      }   
+    }
+
+  }
   // Algoritmo Para tratar flags
-  for (size_t i = 0; i < CMD.size(); i++) {
-    if (CMD[i][0] != '-' && CMD[i][0] != '+') continue;
-    for (size_t j = 0; j < CMD[i].size(); j++) {
-      if (CMD[i][j] == '-' || CMD[i][j] == '+') {
-        indexSign = j;
-        continue;
-      }
-      flag.first = "";
-      flag.second = 0;
+  // for (size_t i = 0; i < CMD.size(); i++) {
+  //   if (CMD[i][0] != '-' && CMD[i][0] != '+') continue;
+  //   for (size_t j = 0; j < CMD[i].size(); j++) {
+  //     if (CMD[i][j] == '-' || CMD[i][j] == '+') 
+  //       j++;
+  //     else
+  //       indexSign = j;      
+      // flag.first = "";
+      // flag.second = 0;
       // Procurar por se existe outra flag no vector
-      if (CMD[i][j] == 'k' || CMD[i][j] == 'o' ||
-          (CMD[i][j] == 'l' && CMD[i][indexSign] == '+')) {
-        // Procurar por arg se nao encontrar mandar erro
-        for (size_t k = indexArgs; k < CMD.size(); k++) {
-          if (CMD[k][0] != '-' && CMD[k][0] != '+') {
-            numArgs++;
-            indexArgs = k;
-            break;
-          }
-          if (k == CMD.size() - 1) indexArgs = 0;
-        }
-        if (indexArgs == 0) {
-          // Mandar mensagem: Erro Nao tem argumentos
-          return;
-        }
-        flag.second = indexArgs;
-      }
-      flag.first += CMD[i][indexSign];
-      flag.first += CMD[i][j];
-      itflag = searchFlagDiffSign(flags.begin(), flags.end(), flag.first[0],
-                                  flag.first[1]);
-      if (itflag != flags.end()) flags.erase(itflag);
-      itflag = searchFlagEqSign(flags.begin(), flags.end(), flag.first[0],
-                                flag.first[1]);
-      if (itflag == flags.end()) flags.insert(flags.begin(), flag);
-    }
-    indexSign = 0;
-  }
-  if (numArgs + 3 <= CMD.size()) {
-    // Mandar mensagem: Erro Nao tem argumentos
-    return;
-  }
-  // Using Flags to execute the functions
-  for (itflag = flags.begin(); itflag != flags.end(); itflag++) {
-    for (size_t i = 0; i < 5; i++) {
-      if (cmds[i] == itflag->first[1]) {
-        (this->*myCMDS[i])(CMD, client, (itflag->first[0] == '+'),
-                           itflag->second);
-        break;
-      }
-    }
-  }
-}
+//       if (CMD[i][j] == 'k' || CMD[i][j] == 'o' ||
+//           (CMD[i][j] == 'l' && CMD[i][indexSign] == '+')) {
+//         // Procurar por arg se nao encontrar mandar erro
+//         for (size_t k = indexArgs; k < CMD.size(); k++) {
+//           if (CMD[k][0] != '-' && CMD[k][0] != '+') {
+//             numArgs++;
+//             indexArgs = k;
+//             break;
+//           }
+//           if (k == CMD.size() - 1) indexArgs = 0;
+//         }
+//         if (indexArgs == 0) {
+//           // Mandar mensagem: Erro Nao tem argumentos
+//           return;
+//         }
+//         flag.second = indexArgs;
+//       }
+//       flag.first += CMD[i][indexSign];
+//       flag.first += CMD[i][j];
+//       itflag = searchFlagDiffSign(flags.begin(), flags.end(), flag.first[0],
+//                                   flag.first[1]);
+//       if (itflag != flags.end()) flags.erase(itflag);
+//       itflag = searchFlagEqSign(flags.begin(), flags.end(), flag.first[0],
+//                                 flag.first[1]);
+//       if (itflag == flags.end()) flags.insert(flags.begin(), flag);
+//     }
+//     indexSign = 0;
+//   }
+//   if (numArgs + 3 <= CMD.size()) {
+//     // Mandar mensagem: Erro Nao tem argumentos
+//     return;
+//   }
+//   // Using Flags to execute the functions
+//   for (itflag = flags.begin(); itflag != flags.end(); itflag++) {
+//     for (size_t i = 0; i < 5; i++) {
+//       if (cmds[i] == itflag->first[1]) {
+//         (this->*myCMDS[i])(CMD, client, (itflag->first[0] == '+'),
+//                            itflag->second);
+//         break;
+//       }
+//     }
+//   }
+// }
 
 //   // Com dois argumentos printar as permissoes
 //   if (CMD.size() == 2) {
@@ -581,20 +615,21 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
 //   }
 // }
 
-void Server::inviteOnly(std::vector<std::string> CMD, Client &client, bool plus,
-                        size_t argsUsed) {
+void Server::inviteOnly(std::vector<std::string> CMD, Client &client, char flag) {
   std::string channel, msg;
   std::vector<Channel>::iterator itChannel = searchChannel(channel);
   bool mode;
 
-  (void)argsUsed;
-  if (CMD.size() != 3) return;
+  // if (CMD.size() != 3 ) return;
   channel = CMD[1];
-  if (itChannel == _Channels.end()) return;
-  plus ? mode = true : mode = false;
+  // if (itChannel == _Channels.end()) return;
+  if (flag == '+')
+    mode = true;
+  else
+    mode = false;
   if (itChannel->getInvMode() == mode) return;
   itChannel->setInvMode(mode);
-  msg = msgMode(CMD, client, (plus == true) ? "+i" : "-i");
+  msg = ":IRC 354 " + client.getNick() +  " 152 " + channel + client.getNick();
   sendMessage(msg, client.getFD());
 }
 
