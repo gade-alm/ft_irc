@@ -33,4 +33,5 @@ int main ( int ac, char **av ) {
 	while (!closedServer) {
 		server.selectLoop( clientaddr );
 	}
+	server.closeServer();
 }
