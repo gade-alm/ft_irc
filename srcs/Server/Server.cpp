@@ -105,8 +105,7 @@ void Server::selectLoop(struct sockaddr_in _clientaddr) {
           Client client(_clientfd);
           _Clients.push_back(client);
         } else
-          ;
-          // perror("accept error");
+          perror("accept error");
       } else {
         int numbytes = 0;
         if ((numbytes = recv(i, buf, sizeof(buf), MSG_DONTWAIT)) < 1) {
@@ -233,9 +232,12 @@ void Server::quitServer(std::vector<std::string> CMD, Client &client) {
 bool Server::channelPrep(std::string channelname, Client &client,
                          std::vector<std::string> CMD) {
   std::vector<Channel>::iterator itChannel = searchChannel(channelname);
+  std::vector<Client>::iterator it;
   std::vector<int>::iterator itInv;
 
   if (itChannel != _Channels.end()) {
+    it = itChannel->searchClient(client.getFD());
+    if (it != itChannel->endUsers()) return false;
     // Caso esteja em Invite Mode e sem invitation retornar logo.
     itInv = std::find(itChannel->_invitation.begin(),
                       itChannel->_invitation.end(), client.getFD());
