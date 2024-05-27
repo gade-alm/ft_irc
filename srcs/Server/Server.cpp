@@ -17,6 +17,10 @@ Server::Server(const char *portValue, const std::string &passwordValue) {
   _clientfd = 0;
   maxfds = 0;
   int used = 1;
+  if (strlen(portValue) > 6) {
+    std::cerr << "Wrong input on port" << std::endl;
+    exit (1);
+  }
   int port = atoi(portValue);
   if (port < MINPORT || port > MAXPORT) {
     std::cout << ("Wrong number on port") << std::endl;
@@ -514,9 +518,9 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
           break;
         case 'o':
           operatorFlag(CMD, client, flag, i);
-          std::cout << "ACHEI O O" << std::endl;
           break;
         case 't':
+          topicFlag(CMD, client, flag);
           std::cout << "ACHEI O T" << std::endl;
           break;
         case 'k':
@@ -637,21 +641,23 @@ void Server::inviteOnly(std::vector<std::string> CMD, Client &client, char flag)
   //std::cout << "INVITE ONLY: " << itChannel->getInvMode() << std::endl;
 }
 
-void Server::topicFlag(std::vector<std::string> CMD, Client &client, bool plus,
-                       size_t argsUsed) {
+void Server::topicFlag(std::vector<std::string> CMD, Client &client, char flag) {
   std::string channel, msg;
-  std::vector<Channel>::iterator itChannel = searchChannel(channel);
+  std::vector<Channel>::iterator itChannel;
+  std::vector<Client>::iterator itClient;
   bool mode;
 
-  (void)argsUsed;
-  if (CMD.size() != 3) return;
+  // if (CMD.size() != 3 ) return;
   channel = CMD[1];
+  itChannel = searchChannel(channel);
   if (itChannel == _Channels.end()) return;
-  plus ? mode = true : mode = false;
-  if (itChannel->getTopicMode() == mode) return;
+  itClient = itChannel->searchClient(client.getFD());
+  if (itClient == itChannel->endUsers()) return;
+  (flag == '+') ? mode = true : mode = false;
+  if (!itClient->isOP() || itChannel->getTopicMode() == mode) return;
   itChannel->setTopicMode(mode);
-  msg = msgMode(CMD, client, (plus == true) ? "+t" : "-t");
-  sendMessage(msg, client.getFD());
+  msg = (":" + client.getNick() + "!" + client.getUser() + " " + "MODE " + channel + " " + flag + 't');
+  sendToAll(msg, itChannel);
 }
 
 void Server::operatorFlag(std::vector<std::string> CMD, Client &client,

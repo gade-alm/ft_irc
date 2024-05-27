@@ -52,7 +52,7 @@ class Server {
   Server(const char *portValue, const std::string &passwordValue);
 
   void inviteOnly(std::vector<std::string> CMD, Client &client, char flag);
-  void topicFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
+  void topicFlag(std::vector<std::string> CMD, Client &client, char flag);
   void operatorFlag(std::vector<std::string> CMD, Client &client, char signal, size_t index);
   void userLimitFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
   void passwordFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
