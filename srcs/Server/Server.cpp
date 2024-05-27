@@ -527,6 +527,7 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
           std::cout << "ACHEI O K" << std::endl;
           break;
         case 'l':
+          userLimitFlag(CMD, client, flag, i);
           std::cout << "ACHEI O L" << std::endl;
           break;
       }   
@@ -685,29 +686,35 @@ void Server::operatorFlag(std::vector<std::string> CMD, Client &client,
 }
 
 void Server::userLimitFlag(std::vector<std::string> CMD, Client &client,
-                           bool plus, size_t argsUsed) {
-  std::string channel, msg;
-  std::stringstream parameter;
-  std::vector<Channel>::iterator itChannel = searchChannel(channel);
+                           char signal, size_t index) {
+  std::string msg;
+  std::vector<Channel>::iterator itChannel;
+  std::vector<Client>::iterator itClient;
+  
   bool mode;
   int limit;
 
-  if (CMD.size() != 3 && CMD.size() != 2) return;
-  channel = CMD[1];
-  if (itChannel == _Channels.end()) return;  // NOT FOUND
-  plus ? mode = true : mode = false;
-  if (itChannel->getLimitMode() == mode) return;  // NOT FOUND
-  if (plus) {
-    limit = atoll(CMD[argsUsed].c_str());
-    if (limit <= 0 && limit > std::numeric_limits<int>::max())
-      return;  // Overflow or Invalid Argument
-    itChannel->setLimit(limit);
-  }
-  itChannel->setLimitMode(mode);
-  parameter << ((plus == true) ? "+l " : "-l ");
-  parameter << itChannel->getLimit();
-  msg = msgMode(CMD, client, parameter.str());
-  sendMessage(msg, client.getFD());
+  if (CMD.size() < index + 2) return; // Not enough arguments
+  itChannel = searchChannel(CMD[1]);
+  if (itChannel == _Channels.end()) return;  // CHANNEL NOT FOUND
+  itClient = itChannel->searchClient(client.getFD());
+  if (itClient == itChannel->endUsers() || !itClient->isOP()) return;  // USER NOT FOUND OR MISSING OP
+  (signal == '+') ? mode = true : mode = false;
+  if (!mode && !itChannel->getLimitMode()) return;  // Mode already set
+  limit = atoll(CMD[index + 1].c_str());
+  if (limit <= 0 || limit > std::numeric_limits<int>::max() || (size_t)limit == itChannel->getLimit()) return;  // Overflow or Invalid Argument
+  std::cout << "LIMIT: " << limit << std::endl;
+  std::cout << "INPUT: " << CMD[index + 1] << std::endl;
+  itChannel->setLimit(limit);
+  itChannel->setLimitMode(true);
+  msg = ":" + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + ' ' +
+        CMD[1] + " ";
+  msg += (mode ? "+l " : "-l ");
+  std::ostringstream oss;
+  oss << limit;
+  if (mode) msg += oss.str(); 
+  std::cout << "MSG: " << msg << std::endl;
+  sendToAll(msg, itChannel);
 }
 
 void Server::passwordFlag(std::vector<std::string> CMD, Client &client,

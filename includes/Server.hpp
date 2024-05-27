@@ -54,7 +54,7 @@ class Server {
   void inviteOnly(std::vector<std::string> CMD, Client &client, char flag);
   void topicFlag(std::vector<std::string> CMD, Client &client, char flag);
   void operatorFlag(std::vector<std::string> CMD, Client &client, char signal, size_t index);
-  void userLimitFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
+  void userLimitFlag(std::vector<std::string> CMD, Client &client, char signal, size_t index);
   void passwordFlag(std::vector<std::string> CMD, Client &client, bool plus, size_t argsUsed);
   std::string printArgs(std::vector<std::string> CMD, Client &client);
   std::string msgMode(std::vector<std::string> CMD, Client client, std::string parameter);
