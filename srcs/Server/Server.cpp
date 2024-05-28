@@ -33,6 +33,7 @@ Server::Server(const char *portValue, const std::string &passwordValue) {
   setSocket(socket(serverAddr.sin_family, SOCK_STREAM, PROTOCOL));
   if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, &used,
                  sizeof(used)) == -1) {
+    close(_serverSocket);
     perror("setsockopt");
     return;
   }

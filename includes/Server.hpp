@@ -87,7 +87,7 @@ class Server {
 
   void outOfChannels(Client& clients);
   void sendToAll(std::string message, std::vector<Channel>::iterator channel);
-  void Server::closeServer();
+  void closeServer();
 
   ~Server();
 };

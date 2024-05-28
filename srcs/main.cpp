@@ -5,12 +5,11 @@
 bool closedServer = false;
 
 void sigHandler(int signal){
-	if ( signal == SIGINT ){
+	(void)signal;
 		close(4);
  		if (closedServer == false)
     		closedServer = true;
 		return ;
-	}
 }
 
 int main ( int ac, char **av ) {
@@ -24,6 +23,8 @@ int main ( int ac, char **av ) {
 	// sa.sa_handler = sigHandler;
 	// sigaction(SIGINT, &sa, NULL);
 	signal(SIGINT, sigHandler);
+	signal(SIGQUIT, sigHandler);
+
 	// sa.sa_flags = 0;
 
 	Server server(av[1], av[2]);
