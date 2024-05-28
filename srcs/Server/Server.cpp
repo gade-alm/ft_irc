@@ -53,6 +53,7 @@ void Server::setBind(void) {
   _bindSocket = bind(_serverSocket, (struct sockaddr *)&serverAddr,
                      sizeof(struct sockaddr));
   if (_bindSocket == -1) {
+    close(_serverSocket); 
     perror("setBind");
     exit(1);
   }
