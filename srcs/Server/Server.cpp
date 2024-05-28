@@ -241,13 +241,17 @@ bool Server::channelPrep(std::string channelname, Client &client,
     // std::cout << "CLIENT FD: " << client.getFD() << " "
     //           << itChannel->_invitation[0] << std::endl;
     if (itChannel->getPassword() != "" && (CMD.size() < 3 || \
-        CMD[2] != itChannel->getPassword())) return false;
+        CMD[2] != itChannel->getPassword())){
+          sendMessage("Wrong password to join channel.", client.getFD());
+          return false;
+        } 
     if (itChannel->getLimitMode() &&
         itChannel->getLimit() == itChannel->getUserOn().size()) {
       sendMessage("Channel is full.", client.getFD());
       return false;
     }
     if (itChannel->getInvMode() && itInv == itChannel->_invitation.end()) {
+      sendMessage("You are not invited to this channel.", client.getFD());
       return false;
     }
     if (itInv != itChannel->_invitation.end())
@@ -483,15 +487,12 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
           break;
         case 't':
           topicFlag(CMD, client, flag);
-          std::cout << "ACHEI O T" << std::endl;
           break;
         case 'k':
           passwordFlag(CMD, client, flag, i);
-          std::cout << "ACHEI O K" << std::endl;
           break;
         case 'l':
           userLimitFlag(CMD, client, flag, i);
-          std::cout << "ACHEI O L" << std::endl;
           break;
       }   
     }
@@ -625,12 +626,6 @@ void Server::passwordFlag(std::vector<std::string> CMD, Client &client,
   sendToAll(msg, itChannel);
 }
 
-// ENviar mensagens dos modes msg = ":IRC " + CMD[0] + ' ' + CMD[1] + ' ' +
-// flags;
-
-// Mensagens com para o MODE #A
-//>> :Aurora.AfterNET.Org 324 test1 #a +
-//>> :Aurora.AfterNET.Org 329 test1 #a 1716325933
 std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
   std::string flags, msg, ip;
   std::vector<Channel>::iterator itChannel;
