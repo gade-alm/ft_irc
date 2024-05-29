@@ -6,7 +6,7 @@ bool closedServer = false;
 
 void sigHandler(int signal){
 	(void)signal;
-		close(4);
+		// close(4);
  		if (closedServer == false)
     		closedServer = true;
 		return ;

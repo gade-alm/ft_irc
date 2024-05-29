@@ -34,7 +34,7 @@ Server::Server(const char *portValue, const std::string &passwordValue) {
   if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, &used,
                  sizeof(used)) == -1) {
     close(_serverSocket);
-    perror("setsockopt");
+    // perror("setsockopt");
     return;
   }
   setBind();
@@ -44,7 +44,7 @@ Server::Server(const char *portValue, const std::string &passwordValue) {
 void Server::setSocket(int socketFD) {
   _serverSocket = socketFD;
   if (_serverSocket == -1) {
-    perror("setSocket");
+    // perror("setSocket");
     return;
   }
 }
@@ -54,7 +54,7 @@ void Server::setBind(void) {
                      sizeof(struct sockaddr));
   if (_bindSocket == -1) {
     close(_serverSocket); 
-    perror("setBind");
+    // perror("setBind");
     exit(1);
   }
 }
@@ -65,7 +65,7 @@ void Server::initAddr(void) {
   serverAddr.sin_port = htons(_serverPort);
   serverAddr.sin_addr.s_addr = INADDR_ANY;
   if (serverAddr.sin_addr.s_addr != 0) {
-    perror("initAddr");
+    // perror("initAddr");
     return;
   }
 }
@@ -73,7 +73,7 @@ void Server::initAddr(void) {
 void Server::listenSockets(void) {
   _listenSocket = listen(_serverSocket, BACKLOG);
   if (_listenSocket == -1) {
-    perror("Error while opening sockets");
+    // perror("Error while opening sockets");
     return;
   }
 }
@@ -91,7 +91,7 @@ void Server::prepareFDs(void) {
 void Server::selectLoop(struct sockaddr_in _clientaddr) {
   _selectfds = _masterfds;
   if (select(maxfds + 1, &_selectfds, NULL, NULL, NULL) == -1) {
-    perror("SELECT:");
+    // perror("SELECT:");
     return;
   }
   for (int i = 0; i <= maxfds; i++) {
@@ -105,20 +105,21 @@ void Server::selectLoop(struct sockaddr_in _clientaddr) {
           Client client(_clientfd);
           _Clients.push_back(client);
         } else
-          perror("accept error");
+          ;
+          // perror("accept error");
       } else {
         int numbytes = 0;
         if ((numbytes = recv(i, buf, sizeof(buf), MSG_DONTWAIT)) < 1) {
           if (errno == EAGAIN || errno == EWOULDBLOCK)
             continue;
           else {
-            perror("recv error");
             if (searchClient(i) != _Clients.end()) {
               disconnectClient(searchClient(i));
               return;
             }
-            close(i);
-            FD_CLR(i, &_masterfds);
+            // std::cout << " CAIU NESATA MERDA " << std::endl;
+            // close(i);
+            // FD_CLR(i, &_masterfds);
           }
         } else {
           std::string buffer(buf, numbytes);
@@ -171,11 +172,11 @@ std::vector<Channel>::iterator Server::searchChannel(std::string channelname) {
 
 void Server::disconnectClient(std::vector<Client>::iterator it) {
   Client &client = *it;
-  FD_CLR(client.getFD(), &_masterfds);
   std::string message = "You have been disconnected.";
   sendMessage(message, client.getFD());
   outOfChannels(client);
   close(client.getFD());
+  FD_CLR(client.getFD(), &_masterfds);
   _Clients.erase(it);
 }
 
@@ -370,6 +371,7 @@ void Server::topicChannel(std::vector<std::string> CMD, Client &client) {
   std::vector<Channel>::iterator it = searchChannel(channelName);
 
   if (it == _Channels.end()) return ;
+  if (it->searchClient(client.getFD()) == it->endUsers()) return ;
   if (CMD.size() == 2) {
     if (it != _Channels.end()) {
       std::string topic = it->getTopic();
@@ -399,8 +401,7 @@ void Server::topicChannel(std::vector<std::string> CMD, Client &client) {
   std::string msg = ":" + client.getNick() + "!" + client.getUser() +
                     " TOPIC " + channelName + " " + topic + "\r\n";
   // std::cout << "TOPIC: " << topic << std::endl;
-
-  it->setTopic(topic.substr(1, topic.size() - 1));
+  it->setTopic(topic.substr((topic[0] == ':') ? 1 : 0, topic.size() - ((topic[0] == ':') ? 1 : 0)));
   for (std::vector<Client>::iterator itClient = it->beginUsers();
        itClient != it->endUsers(); itClient++) {
     sendMessage(msg, itClient->getFD());
@@ -409,14 +410,17 @@ void Server::topicChannel(std::vector<std::string> CMD, Client &client) {
 
 void Server::part(std::vector<std::string> CMD, Client &client) {
   std::vector<Channel>::iterator channel;
+  std::vector<Client>::iterator it;
   std::string msg;
 
-  if (CMD.size() != 3) return;
+  if (CMD.size() != 2) return;
   channel = searchChannel(CMD[1]);
-  if (channel == _Channels.end() || CMD[2] != ":Leaving") return;
+  if (channel == _Channels.end()) return ;
+  it = channel->searchClient(client.getFD());
+  if (it == channel->endUsers()) return;
   channel->rmUser(client);
   msg = ':' + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + ' ' +
-        CMD[1];
+        CMD[1] ;
   sendMessage(msg, client.getFD());
 }
 
@@ -554,7 +558,7 @@ void Server::operatorFlag(std::vector<std::string> CMD, Client &client,
   User = itChannel->searchClient(client.getFD());
   if (User == itChannel->endUsers()) return;  // User not in channel
   signal == '+' ? mode = true : mode = false;
-  //std::cout << "OP: " << itClient->isOP() << " " << User->isOP()  << " " << mode << std::endl;
+  // std::cout << "OP: " << itClient->isOP() << " " << User->isOP()  << " " << mode << std::endl;
   if (!User->isOP() || itClient->isOP() == mode) return;  // Mode already set or client dont have OP
   itClient->setOP(mode);
   msg = msgMode(CMD, client,
@@ -571,13 +575,16 @@ void Server::userLimitFlag(std::vector<std::string> CMD, Client &client,
   bool mode;
   int limit;
 
-  if (CMD.size() < index + 2) return; // Not enough arguments
+  if (CMD.size() < index + ((signal == '+') ? 2 : 1)) return; // Not enough arguments
   itChannel = searchChannel(CMD[1]);
   if (itChannel == _Channels.end()) return;  // CHANNEL NOT FOUND
   itClient = itChannel->searchClient(client.getFD());
   if (itClient == itChannel->endUsers() || !itClient->isOP()) return;  // USER NOT FOUND OR MISSING OP
   (signal == '+') ? mode = true : mode = false;
-  if (!mode && !itChannel->getLimitMode()) return;  // Mode already set
+  if (!mode ){
+   itChannel->setLimitMode(false);
+   return;
+  }
   limit = atoll(CMD[index + 1].c_str());
   if (limit <= 0 || limit > std::numeric_limits<int>::max() || (size_t)limit == itChannel->getLimit()) return;  // Overflow or Invalid Argument
   std::cout << "LIMIT: " << limit << std::endl;
@@ -661,9 +668,10 @@ std::string Server::msgMode(std::vector<std::string> CMD, Client client,
 void Server::outOfChannels(Client &clients) {
   for (std::vector<Channel>::iterator it = _Channels.begin();
        it != _Channels.end(); it++) {
-    for (std::vector<Client>::iterator ic = _Clients.begin();
-         ic != _Clients.end(); ic++) {
+    for (std::vector<Client>::iterator ic = it->beginUsers();
+         ic != it->endUsers(); ic++) {
       if (ic->getFD() == clients.getFD()) it->removeUser(ic->getFD());
+       break ;
     }
   }
 }

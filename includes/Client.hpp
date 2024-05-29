@@ -21,7 +21,6 @@ class Client {
   bool checkNick(std::string input, std::vector<Client>& Clients);
 
  public:
-  sockaddr_in _client_address;
   Client();
   Client(int fd);
   Client(const Client& copy);

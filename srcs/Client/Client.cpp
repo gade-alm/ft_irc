@@ -21,7 +21,6 @@ Client& Client::operator=(const Client& copy) {
   _authenticated = copy._authenticated;
   _registred = copy._registred;
   _clientfd = copy._clientfd;
-  _client_address = copy._client_address;
   return *this;
 }
 

@@ -103,7 +103,11 @@ void Channel::printUsers() {
   }
 }
 
-void Channel::removeUser(int value) { _Users.erase(searchClient(value)); }
+void Channel::removeUser(int value) { 
+  // std::vector<Client>::iterator it = searchClient(value);
+  // if (it == _Users.end()) return ;
+  _Users.erase(searchClient(value)); 
+  }
 
 bool Channel::clientIsHere(int fd){
   return (searchClient(fd) != _Users.end()) ? true : false;
