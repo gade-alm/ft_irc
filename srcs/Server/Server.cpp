@@ -415,7 +415,7 @@ void Server::part(std::vector<std::string> CMD, Client &client) {
   std::vector<Client>::iterator it;
   std::string msg;
 
-  if (CMD.size() != 2) return;
+  if (CMD.size() < 2) return;
   channel = searchChannel(CMD[1]);
   if (channel == _Channels.end()) return ;
   it = channel->searchClient(client.getFD());
@@ -473,7 +473,7 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
     return;
   }
   size_t i = 0;
-  char flag;
+  char flag = '0';
   for (; i < CMD.size(); i++){
     if (CMD[i][0] == '-' || CMD[i][0] == '+')
     {
@@ -481,7 +481,9 @@ void Server::mode(std::vector<std::string> CMD, Client &client) {
       break ;
     }
   }
-  for (size_t j = 1; j < CMD[i].size(); j++) {
+  if (flag == '0')
+    return ;
+  for (size_t j = 0; j < CMD[i].size(); j++) {
     if (CMD[i][j])
       switch (CMD[i][j])
       {
@@ -585,12 +587,13 @@ void Server::userLimitFlag(std::vector<std::string> CMD, Client &client,
   (signal == '+') ? mode = true : mode = false;
   if (!mode ){
    itChannel->setLimitMode(false);
+   msg = ":" + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + ' ' + CMD[1] + " -l";
+   std::cout << msg << std::endl;
+   sendToAll(msg, itChannel);
    return;
   }
   limit = atoll(CMD[index + 1].c_str());
   if (limit <= 0 || limit > std::numeric_limits<int>::max() || (size_t)limit == itChannel->getLimit()) return;  // Overflow or Invalid Argument
-  std::cout << "LIMIT: " << limit << std::endl;
-  std::cout << "INPUT: " << CMD[index + 1] << std::endl;
   itChannel->setLimit(limit);
   itChannel->setLimitMode(true);
   msg = ":" + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + ' ' +
@@ -646,7 +649,10 @@ std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
   if (itChannel == _Channels.end()) return "";  // NOT FOUND
   itClient = itChannel->searchClient(client.getNick());
   if (itClient == _Clients.end()) return "";  // NOT FOUND
-  flags = '+';
+  if (!itChannel->getInvMode() && !itChannel->getTopicMode() && itChannel->getPassword() == "" && !itChannel->getLimitMode())
+    flags = "";
+  else
+    flags = '+';
   if (itChannel->getInvMode()) flags += 'i';
   if (itChannel->getTopicMode()) flags += 't';
   if (itChannel->getPassword() != "") flags += 'k';
