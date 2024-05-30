@@ -10,14 +10,10 @@
 # include <cstring>
 # include <vector>
 # include <arpa/inet.h>
-# include <fcntl.h>
 # include <sys/socket.h>
 # include <unistd.h>
 # include <sys/types.h>
 # include <netinet/in.h>
-# include <sys/time.h>
-# include <sys/select.h>
-# include <errno.h>
 
 #define MINPORT 1024
 #define MAXPORT 65535

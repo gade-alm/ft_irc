@@ -109,17 +109,10 @@ void Server::selectLoop(struct sockaddr_in _clientaddr) {
       } else {
         int numbytes = 0;
         if ((numbytes = recv(i, buf, sizeof(buf), MSG_DONTWAIT)) < 1) {
-          if (errno == EAGAIN || errno == EWOULDBLOCK)
-            continue;
-          else {
             if (searchClient(i) != _Clients.end()) {
               disconnectClient(searchClient(i));
               return;
             }
-            // std::cout << " CAIU NESATA MERDA " << std::endl;
-            // close(i);
-            // FD_CLR(i, &_masterfds);
-          }
         } else {
           std::string buffer(buf, numbytes);
           std::vector<Client>::iterator it = searchClient(i);
@@ -139,6 +132,7 @@ void Server::selectLoop(struct sockaddr_in _clientaddr) {
     }
   }
 }
+
 
 std::vector<Client>::iterator Server::searchClient(int fd) {
   std::vector<Client>::iterator it;
@@ -203,7 +197,6 @@ void Server::joinChannel(std::vector<std::string> CMD, Client &client) {
   std::string channelname = CMD[1];
   if (channelname[0] != '#') channelname = "#" + channelname;
   if (!channelPrep(channelname, client, CMD)) {
-    // INVALID MODE
     return;
   }
   std::string output =
@@ -218,14 +211,11 @@ void Server::joinChannel(std::vector<std::string> CMD, Client &client) {
     if (itClient->getFD() != client.getFD())
       sendMessage(message, itClient->getFD());
   }
-  /* 	std::vector<Channel>::iterator itChannel = searchChannel(channelname);
-          itChannel->printUsers(); */
 }
 
 void Server::quitServer(std::vector<std::string> CMD, Client &client) {
   (void)CMD;
   std::vector<Client>::iterator it = searchClient(client.getFD());
-  // Missing Channels disconnect.
   disconnectClient(it);
 }
 
@@ -238,11 +228,8 @@ bool Server::channelPrep(std::string channelname, Client &client,
   if (itChannel != _Channels.end()) {
     it = itChannel->searchClient(client.getFD());
     if (it != itChannel->endUsers()) return false;
-    // Caso esteja em Invite Mode e sem invitation retornar logo.
     itInv = std::find(itChannel->_invitation.begin(),
                       itChannel->_invitation.end(), client.getFD());
-    // std::cout << "CLIENT FD: " << client.getFD() << " "
-    //           << itChannel->_invitation[0] << std::endl;
     if (itChannel->getPassword() != "" && (CMD.size() < 3 || \
         CMD[2] != itChannel->getPassword())){
           sendMessage("Wrong password to join channel.", client.getFD());
@@ -270,7 +257,6 @@ bool Server::channelPrep(std::string channelname, Client &client,
   _Channels.push_back(channel);
 
   itChannel = searchChannel(channelname);
-  // itChannel->printUsers();
   return true;
 }
 
@@ -308,7 +294,6 @@ void Server::deliveryMSG(std::vector<std::string> CMD, Client &client) {
 }
 
 void Server::kickFromChannel(std::vector<std::string> CMD, Client &client) {
-  // :server_name KICK #channelname username :reason
   std::string channelname;
   if (channelname[0] != '#') channelname = "#" + channelname;
   std::string nick;
@@ -402,7 +387,6 @@ void Server::topicChannel(std::vector<std::string> CMD, Client &client) {
 
   std::string msg = ":" + client.getNick() + "!" + client.getUser() +
                     " TOPIC " + channelName + " " + topic + "\r\n";
-  // std::cout << "TOPIC: " << topic << std::endl;
   it->setTopic(topic.substr((topic[0] == ':') ? 1 : 0, topic.size() - ((topic[0] == ':') ? 1 : 0)));
   for (std::vector<Client>::iterator itClient = it->beginUsers();
        itClient != it->endUsers(); itClient++) {
@@ -426,7 +410,6 @@ void Server::part(std::vector<std::string> CMD, Client &client) {
   sendMessage(msg, client.getFD());
 }
 
-// Invite Function
 void Server::invite(std::vector<std::string> CMD, Client &client) {
   if (CMD.size() < 3) return;
   std::vector<Client>::iterator destiny = searchClient(CMD[1]);
@@ -453,18 +436,6 @@ void Server::invite(std::vector<std::string> CMD, Client &client) {
   msg = ":IRC 341 " + client.getNick() + " " + destiny->getNick() + " " + CMD[2];
   sendMessage(msg, client.getFD());
 }
-
-/*********************************************
- * Mode function has 5 flags                 *
- *  i  Sets invite only channel flag         *
- *  t Change or view Topics                  *
- *  k Set / Removes the channel key          *
- *  o Give / Take channel operator privilege *
- *  l Set / Romove the user limit to channel *
- *                                           *
- * To kknow if a flag is used must have a    *
- * + or - sign in a flag                     *
- ********************************************/
 
 void Server::mode(std::vector<std::string> CMD, Client &client) {
   if (CMD.size() < 2) return;
@@ -513,7 +484,6 @@ void Server::inviteOnly(std::vector<std::string> CMD, Client &client, char flag)
   std::vector<Client>::iterator itClient;
   bool mode;
 
-  // if (CMD.size() != 3 ) return;
   channel = CMD[1];
   itChannel = searchChannel(channel);
   if (itChannel == _Channels.end()) return;
@@ -524,7 +494,6 @@ void Server::inviteOnly(std::vector<std::string> CMD, Client &client, char flag)
   itChannel->setInvMode(mode);
   msg = (":" + client.getNick() + "!" + client.getUser() + " " + "MODE " + channel + " " + flag + 'i');
   sendToAll(msg, itChannel);
-  //std::cout << "INVITE ONLY: " << itChannel->getInvMode() << std::endl;
 }
 
 void Server::topicFlag(std::vector<std::string> CMD, Client &client, char flag) {
@@ -533,7 +502,6 @@ void Server::topicFlag(std::vector<std::string> CMD, Client &client, char flag) 
   std::vector<Client>::iterator itClient;
   bool mode;
 
-  // if (CMD.size() != 3 ) return;
   channel = CMD[1];
   itChannel = searchChannel(channel);
   if (itChannel == _Channels.end()) return;
@@ -554,16 +522,15 @@ void Server::operatorFlag(std::vector<std::string> CMD, Client &client,
   std::vector<Client>::iterator User;
   bool mode;
 
-  if (CMD.size() < index + 2) return; // Not enough arguments
+  if (CMD.size() < index + 2) return; 
   itChannel = searchChannel(CMD[1]);
-  if (itChannel == _Channels.end()) return;  // NOT FOUND
+  if (itChannel == _Channels.end()) return; 
   itClient = itChannel->searchClient(CMD[index + 1]);
-  if (itClient == itChannel->endUsers()) return;  // NOT FOUND
+  if (itClient == itChannel->endUsers()) return; 
   User = itChannel->searchClient(client.getFD());
-  if (User == itChannel->endUsers()) return;  // User not in channel
+  if (User == itChannel->endUsers()) return;  
   signal == '+' ? mode = true : mode = false;
-  // std::cout << "OP: " << itClient->isOP() << " " << User->isOP()  << " " << mode << std::endl;
-  if (!User->isOP() || itClient->isOP() == mode) return;  // Mode already set or client dont have OP
+  if (!User->isOP() || itClient->isOP() == mode) return;  
   itClient->setOP(mode);
   msg = msgMode(CMD, client,
                 (mode == true) ? "+o " + CMD[index + 1] : "-o " + CMD[index + 1]);
@@ -579,11 +546,11 @@ void Server::userLimitFlag(std::vector<std::string> CMD, Client &client,
   bool mode;
   int limit;
 
-  if (CMD.size() < index + ((signal == '+') ? 2 : 1)) return; // Not enough arguments
+  if (CMD.size() < index + ((signal == '+') ? 2 : 1)) return; 
   itChannel = searchChannel(CMD[1]);
-  if (itChannel == _Channels.end()) return;  // CHANNEL NOT FOUND
+  if (itChannel == _Channels.end()) return; 
   itClient = itChannel->searchClient(client.getFD());
-  if (itClient == itChannel->endUsers() || !itClient->isOP()) return;  // USER NOT FOUND OR MISSING OP
+  if (itClient == itChannel->endUsers() || !itClient->isOP()) return;
   (signal == '+') ? mode = true : mode = false;
   if (!mode ){
    itChannel->setLimitMode(false);
@@ -593,7 +560,7 @@ void Server::userLimitFlag(std::vector<std::string> CMD, Client &client,
    return;
   }
   limit = atoll(CMD[index + 1].c_str());
-  if (limit <= 0 || limit > std::numeric_limits<int>::max() || (size_t)limit == itChannel->getLimit()) return;  // Overflow or Invalid Argument
+  if (limit <= 0 || limit > std::numeric_limits<int>::max() || (size_t)limit == itChannel->getLimit()) return;
   itChannel->setLimit(limit);
   itChannel->setLimitMode(true);
   msg = ":" + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + ' ' +
@@ -614,23 +581,23 @@ void Server::passwordFlag(std::vector<std::string> CMD, Client &client,
   bool mode;
   signal == '+' ? mode = true : mode = false;
 
-  if (mode && CMD.size() < index + 2) return;  // Not enough arguments
+  if (mode && CMD.size() < index + 2) return; 
   itChannel = searchChannel(CMD[1]);
-  if (itChannel == _Channels.end()) return;  // Channel Not Found
+  if (itChannel == _Channels.end()) return; 
   itClient = itChannel->searchClient(client.getNick());
-  if (itClient == itChannel->endUsers()) return;  // User Not Found
-  if (!itClient->isOP()) return;                  // Not OP
+  if (itClient == itChannel->endUsers()) return;
+  if (!itClient->isOP()) return;
 
   if (mode) {
     for (int i = 0; CMD[index + 1][i]; i++) {
-      if (!isalnum(CMD[index + 1][i])) return;  // Invalid Password
+      if (!isalnum(CMD[index + 1][i])) return;
     }
-    if (itChannel->getPassword() == CMD[index + 1]) return;  // Same Password 
+    if (itChannel->getPassword() == CMD[index + 1]) return;
     itChannel->setPassword(CMD[index + 1]);
     msg = ":" + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + ' ' +
         CMD[1] + ' ' + "+k " + CMD[index + 1];
   } else {
-    if (itChannel->getPassword() == "") return;  // No password set
+    if (itChannel->getPassword() == "") return;
     itChannel->setPassword("");
     msg = ":" + client.getNick() + '!' + client.getUser() + ' ' + CMD[0] + ' ' +
         CMD[1] + ' ' + "-k";
@@ -644,11 +611,11 @@ std::string Server::printArgs(std::vector<std::string> CMD, Client &client) {
   std::vector<Client>::iterator itClient;
 
   ip = IP;
-  if (CMD.size() != 2) return "";  // INVALID ARGS
+  if (CMD.size() != 2) return "";
   itChannel = searchChannel(CMD[1]);
-  if (itChannel == _Channels.end()) return "";  // NOT FOUND
+  if (itChannel == _Channels.end()) return "";
   itClient = itChannel->searchClient(client.getNick());
-  if (itClient == _Clients.end()) return "";  // NOT FOUND
+  if (itClient == _Clients.end()) return "";
   if (!itChannel->getInvMode() && !itChannel->getTopicMode() && itChannel->getPassword() == "" && !itChannel->getLimitMode())
     flags = "";
   else

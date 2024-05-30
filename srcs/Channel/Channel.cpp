@@ -93,7 +93,6 @@ std::vector<Client>::iterator Channel::endUsers() { return _Users.end(); }
 
 std::vector<Client>::iterator Channel::beginUsers() { return _Users.begin(); }
 
-// DEBUG
 void Channel::printUsers() {
   for (std::vector<Client>::iterator it = _Users.begin(); it != _Users.end();
        it++) {
@@ -104,8 +103,6 @@ void Channel::printUsers() {
 }
 
 void Channel::removeUser(int value) { 
-  // std::vector<Client>::iterator it = searchClient(value);
-  // if (it == _Users.end()) return ;
   _Users.erase(searchClient(value)); 
   }
 
